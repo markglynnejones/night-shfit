@@ -75,6 +75,41 @@ This lets us establish the interaction, sorting, content pipeline, persistence, 
 
 Only generalise architecture for additional media types once their real requirements are known.
 
+## 2026-08-17 - Music shelf order
+
+Music is organised using the following rule:
+
+**Genre -> Artist A-Z -> Album A-Z -> duplicate copies grouped together**
+
+Consequences:
+
+- Genre determines the broad store area or shelf run.
+- Artists are ordered alphabetically within that genre.
+- Albums by the same artist are ordered alphabetically by album title.
+- Multiple physical copies of the same album sit together as one contiguous group.
+- A CD is not considered correctly organised merely because it is inside the correct first-letter section; its relative position amongst neighbouring artists/albums also matters.
+- Shelf validation should care about logical ordering rather than requiring one exact hard-coded physical slot for every copy.
+- Empty space on a shelf is acceptable as long as the relative ordering of stock is correct.
+- Correctly placed items should still snap into clean, consistent physical positions.
+
+Leading articles such as `The` should be ignored for artist alphabetisation unless later playtesting shows that this feels unintuitive.
+
+Example:
+
+```text
+ROCK
+
+Black Afternoon
+  Broken Television x3
+
+Blue Day
+  British Genius x2
+  International Clever Person x5
+
+Grey Parade
+  The Grey Parade x4
+```
+
 ## 2026-08-17 - Mid-2000s fictional UK media-retail setting
 
 The store should evoke a British high-street physical-media retailer around 2004-2008 without copying a real retailer directly.
