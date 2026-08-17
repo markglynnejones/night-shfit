@@ -1,31 +1,43 @@
 # Night Shift
 
+## Read First
+
+Before changing gameplay or architecture, read:
+
+- `GAME_VISION.md`
+- `PROTOTYPE_SCOPE.md`
+- `IMPLEMENTATION_PLAN.md`
+- `DECISIONS.md`
+
+These files are the source of truth for product direction.
+
 ## Project
 
-Night Shift is a first-person cosy tidying game set in a fictional
-British physical-media retailer in the mid-2000s.
+Night Shift is a first-person cosy organisation game set in a fictional British physical-media retailer in the mid-2000s.
 
-The player is the night-shift employee after the store has closed.
+The shop is closed and empty after an exceptionally destructive sale day. The player has one enormous persistent task: restore the entire shop from believable retail chaos to an organised state.
 
-There are no customers.
+There are no repeating shifts, daily resets, timers, customers, or shop-management loops.
 
 The core gameplay loop is:
 
 1. Find misplaced physical media.
 2. Pick it up and inspect it.
-3. Determine where it belongs.
-4. Carry it to the correct shelf.
-5. Place it correctly.
-6. Gradually restore the shop to an organised state.
-7. Clock out when the shift is complete.
+3. Identify what it is.
+4. Determine where it belongs.
+5. Carry it to the correct section.
+6. Place it correctly.
+7. Gradually restore the same persistent shop over many play sessions.
 
-## Prototype Goal
+The finished game is intended to contain thousands of physical media items, including multiple physical copies of the same catalogue title.
 
-The initial prototype exists to answer one question:
+## Current Prototype Goal
 
-"Is physically sorting CDs into the correct shelves satisfying?"
+The prototype exists to prove that physically sorting a dense collection of media is satisfying before we scale content or polish.
 
-Everything should serve that question.
+Everything should support this question:
+
+> Is identifying, carrying, grouping, and shelving a large amount of physical media enjoyable for an extended period?
 
 ## Technology
 
@@ -36,77 +48,97 @@ Everything should serve that question.
 
 The Unity project lives in `/Game`.
 
-## Prototype Scope
+## Current Prototype Systems
 
-The first prototype contains:
+The current implementation includes or is expected to preserve:
 
-- First-person movement
-- One small greybox media shop
-- One music department
-- Shelving
+- First-person movement and mouse look
 - Physical CD cases
-- Approximately 20 fictional artists
-- Approximately 50-60 CDs
-- Four genres:
-  - Rock
-  - Pop
-  - Metal
-  - Indie
-- Picking up CDs
-- Dropping CDs
-- Inspecting CDs
-- Shelf placement
-- Correct/incorrect placement validation
-- Basic completion tracking
-- Clocking out after all required items are organised
+- Pickup and drop interaction
+- Readable prototype media covers
+- Shelf placement and validation
+- Shared album/catalogue definitions
+- Multiple physical copies referencing the same definition
+- Dense shelving tests
 
-## Explicitly Out of Scope
+## Data Model
 
-Do NOT add any of the following unless specifically requested:
+Keep catalogue data separate from physical stock.
 
-- Customers
-- NPCs
-- Dialogue
-- Combat
-- Multiplayer
-- Skill trees
-- Shop management
-- Economy simulation
-- Procedural generation
-- Character creation
-- Achievements
-- Online functionality
-- Elaborate story systems
-- Multiple shops
-- Multiple time periods
+### Catalogue definition
 
-Do not expand project scope proactively.
+A catalogue entry such as an album contains shared data, for example:
+
+- Stable catalogue ID
+- Artist
+- Title
+- Genre/category
+- Sort key
+- Artwork reference
+
+### Physical item
+
+A physical `MediaItem` represents one copy in the shop and references a shared catalogue definition.
+
+Multiple physical items may reference the same definition. Do not duplicate album metadata per copy.
 
 ## Design Principles
 
 ### Tactile
 
-Picking up, carrying and placing media should feel physical and satisfying.
+Picking up, carrying, inspecting, grouping, and placing media should feel physical and satisfying.
 
-### Readable
+### Organisational
 
-Players should be able to determine where an item belongs by inspecting
-the physical object and reading shop signage.
+The game is about solving one enormous mess. The player's reward is seeing chaos become orderly.
+
+### Player-directed
+
+Validate the final organisation, but avoid prescribing the exact workflow. Players should be free to make piles, group duplicates, work one department at a time, or invent their own process.
+
+### Learnable
+
+Player knowledge is part of progression. Repeated exposure should allow players to recognise fictional artists, covers, genres, and locations faster over time.
 
 ### Nostalgic
 
-The environment should evoke a fictional British media retailer circa
-2004-2008.
+The environment should evoke a fictional British media retailer circa 2004-2008.
 
-References to real-world media should be parody or original fictional
-material rather than direct copies.
+Use original fictional media and affectionate parody rather than direct copies of real-world copyrighted artwork.
 
-### Small
+### Believable chaos
 
-Prefer the simplest implementation that proves the gameplay concept.
+The starting store should look catastrophically untidy after a huge sale day, but not randomly exploded. Disorder should come from plausible retail behaviour: abandoned products, mixed piles, wrong shelves, baskets, display tables, stock behind counters, scattered duplicates, and partially emptied bays.
 
-Do not build systems for hypothetical future requirements unless they
-are needed by the current prototype.
+### Scope discipline
+
+Prefer the smallest implementation that proves the current milestone.
+
+Do not build speculative systems for hypothetical future requirements unless the implementation plan calls for them.
+
+## Explicitly Out of Scope
+
+Do NOT add any of the following unless the design documents are deliberately changed first:
+
+- Repeating shifts or days
+- Clock-out gameplay loops
+- Daily resets
+- Customers
+- NPC schedules
+- Dialogue systems
+- Combat
+- Multiplayer
+- Shop economy or business management
+- Hunger, stamina, or survival systems
+- Crafting
+- Character stats
+- Procedural stores
+- Competitive scoring
+- Timers
+- Elaborate story systems
+- Multiple shops
+
+Do not expand project scope proactively.
 
 ## Code Guidelines
 
@@ -114,29 +146,32 @@ Prefer focused components with clear responsibilities.
 
 Avoid large all-purpose manager classes.
 
-Separate data from behaviour where practical.
+Keep data separate from physical behaviour where practical.
 
-For example:
+Current conceptual responsibilities include:
 
-- MediaItemData - album metadata
-- MediaItem - physical object behaviour
-- PlayerInteraction - player interaction
-- ShelfSlot - placement location
-- ShelfSection - shelf/category rules
-- ShiftManager - overall prototype completion
+- `AlbumDefinition` / catalogue definition - shared title metadata
+- `MediaItem` - one physical copy and its physical behaviour
+- `PlayerInteraction` - player pickup/placement interaction
+- `ShelfSection` - category, sorting, capacity, and placement rules
+- Persistence/save components - physical item state and player progress
 
-Keep systems understandable and easy to change while the game design is
-still being prototyped.
+Do not introduce a `ShiftManager` or similar shift-completion architecture.
+
+Avoid hard-coding individual artist or album names into gameplay logic.
 
 ## Working With Codex
 
 Before implementing a feature:
 
-1. Inspect the existing implementation.
-2. Make the smallest change necessary.
-3. Do not introduce unrelated systems.
-4. Verify the project still compiles.
-5. Summarise files changed and significant design decisions.
+1. Read the design documents listed at the top of this file.
+2. Inspect the existing implementation.
+3. Make the smallest change necessary for the current milestone.
+4. Do not introduce unrelated systems.
+5. Preserve existing working behaviour unless the task explicitly changes it.
+6. Verify the project still compiles without errors.
+7. Save all modified Unity scenes and assets.
+8. Confirm scene changes are written to disk before finishing.
+9. Summarise files changed and significant architectural decisions.
 
-When a request is ambiguous, favour prototype simplicity rather than
-adding features.
+When a request is ambiguous, favour prototype simplicity rather than adding features.
