@@ -52,11 +52,6 @@ public sealed class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        if (TryUseClockOutPoint())
-        {
-            return;
-        }
-
         TryPickUpLookedAtItem();
     }
 
@@ -144,47 +139,6 @@ public sealed class PlayerInteraction : MonoBehaviour
         }
 
         return closestShelfSlot;
-    }
-
-    private bool TryUseClockOutPoint()
-    {
-        ClockOutPoint clockOutPoint = FindLookedAtClockOutPoint();
-        if (clockOutPoint == null)
-        {
-            return false;
-        }
-
-        clockOutPoint.Interact();
-        return true;
-    }
-
-    private ClockOutPoint FindLookedAtClockOutPoint()
-    {
-        if (playerCamera == null)
-        {
-            return null;
-        }
-
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange, interactionLayers, QueryTriggerInteraction.Ignore);
-
-        ClockOutPoint closestClockOutPoint = null;
-        float closestDistance = float.MaxValue;
-
-        for (int i = 0; i < hitCount; i++)
-        {
-            RaycastHit hit = hits[i];
-            ClockOutPoint clockOutPoint = hit.collider.GetComponentInParent<ClockOutPoint>();
-            if (clockOutPoint == null || hit.distance >= closestDistance)
-            {
-                continue;
-            }
-
-            closestClockOutPoint = clockOutPoint;
-            closestDistance = hit.distance;
-        }
-
-        return closestClockOutPoint;
     }
 
     private void DropHeldItem()

@@ -139,15 +139,6 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
         mediaItem.Configure(albumDefinition, copy.PhysicalItemId);
 
-        ShiftItem shiftItem = cdObject.GetComponent<ShiftItem>();
-        if (shiftItem == null)
-        {
-            shiftItem = cdObject.AddComponent<ShiftItem>();
-        }
-
-        shiftItem.Configure(!copy.StartsShelved, copy.StartsShelved);
-        ShiftManager.Instance?.RegisterItem(shiftItem);
-
         if (!copy.StartsShelved)
         {
             return;

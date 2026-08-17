@@ -35,7 +35,6 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         PlaceItem(item);
-        ShiftManager.Instance?.NotifyItemPlaced(item);
 
         AlbumDefinition albumDefinition = item.GetComponent<MediaItem>().AlbumDefinition;
         Debug.Log($"Placed {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {acceptedSortKey}.");

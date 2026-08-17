@@ -2465,7 +2465,6 @@ GameObject:
   - component: {fileID: 610001}
   - component: {fileID: 610002}
   - component: {fileID: 610003}
-  - component: {fileID: 610004}
   m_Layer: 0
   m_Name: Prototype Sorting Setup
   m_TagString: Untagged
@@ -2512,18 +2511,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c1a31a8b06f4b74b34d3d91b556024e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &610004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 610000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01fa4d2e26f145728dcafdf3cf48dc68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807

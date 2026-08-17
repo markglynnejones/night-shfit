@@ -39,11 +39,6 @@ public sealed class PhysicalInteractable : MonoBehaviour
         IsHeld = true;
         SetShelfVisualMode(false);
 
-        if (currentShelfSlot != null)
-        {
-            ShiftManager.Instance?.NotifyItemPickedUp(this);
-        }
-
         currentShelfSlot?.ClearIfHolding(this);
         currentShelfSlot = null;
 
