@@ -29,7 +29,7 @@ Everything should serve that question.
 
 ## Technology
 
-- Unity 6.3 LTS
+- Unity 6.5
 - C#
 - Universal Render Pipeline
 - Git
