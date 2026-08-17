@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c91bf8b6394447c18f17d3fbb67b0901, type: 3}
-  m_Name: MotorwayServiceStationHeartbreakAtJunction12
+  m_Name: BlackAfternoonBrokenTelevision
   m_EditorClassIdentifier: 
-  catalogueId: motorway-service-station-heartbreak-at-junction-12
-  artistName: Motorway Service Station
-  albumTitle: Heartbreak at Junction 12
+  catalogueId: black-afternoon-broken-television
+  artistName: Black Afternoon
+  albumTitle: Broken Television
   genre: Rock
-  sortKey: M
+  sortKey: B
   coverArtwork: {fileID: 0}

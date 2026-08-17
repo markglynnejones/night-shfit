@@ -3,19 +3,19 @@ using UnityEngine;
 public sealed class ShelfSectionLabel : MonoBehaviour
 {
     [SerializeField] private string genre = "ROCK";
-    [SerializeField] private string sortKey = "B";
+    [SerializeField] private string artistRange = "A-G";
     [SerializeField] private Color textColor = Color.black;
 
     private void Start()
     {
         CreateLabel("Shelf Genre Text", genre, new Vector3(0f, 1.43f, -0.455f), SizeForText(genre, 0.024f, 5));
-        CreateLabel("Shelf Sort Key Text", sortKey, new Vector3(-0.52f, 1.03f, -0.455f), SizeForText(sortKey, 0.034f, 1));
+        CreateLabel("Shelf Artist Range Text", artistRange, new Vector3(-0.52f, 1.03f, -0.455f), SizeForText(artistRange, 0.026f, 3));
     }
 
-    public void Configure(string newGenre, string newSortKey)
+    public void Configure(string newGenre, string newArtistRange)
     {
         genre = newGenre.ToUpperInvariant();
-        sortKey = newSortKey.ToUpperInvariant();
+        artistRange = newArtistRange.ToUpperInvariant();
     }
 
     private void CreateLabel(

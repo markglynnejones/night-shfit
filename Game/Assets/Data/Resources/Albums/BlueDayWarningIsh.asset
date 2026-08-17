@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c91bf8b6394447c18f17d3fbb67b0901, type: 3}
-  m_Name: BasementSignalsEmergencyTelephones
+  m_Name: BlueDayWarningIsh
   m_EditorClassIdentifier: 
-  catalogueId: basement-signals-emergency-telephones
-  artistName: Basement Signals
-  albumTitle: Emergency Telephones
+  catalogueId: blue-day-warning-ish
+  artistName: Blue Day
+  albumTitle: Warning-ish
   genre: Rock
   sortKey: B
   coverArtwork: {fileID: 0}

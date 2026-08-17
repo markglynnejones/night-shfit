@@ -8,18 +8,16 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private readonly CopySpawn[] copies =
     {
-        new("blue-day-international-clever-person", "cd-blue-day-01", Vector3.zero, 0f, true),
-        new("blue-day-international-clever-person", "cd-blue-day-02", Vector3.zero, 0f, true),
-        new("blue-day-international-clever-person", "cd-blue-day-03", Vector3.zero, 0f, true),
-        new("blue-day-international-clever-person", "cd-blue-day-04", Vector3.zero, 0f, true),
-        new("blue-day-international-clever-person", "cd-blue-day-05", new Vector3(0f, 1.13f, 0.65f), -8f, false),
-        new("basement-signals-emergency-telephones", "cd-basement-signals-01", Vector3.zero, 0f, true),
-        new("basement-signals-emergency-telephones", "cd-basement-signals-02", Vector3.zero, 0f, true),
-        new("basement-signals-emergency-telephones", "cd-basement-signals-03", Vector3.zero, 0f, true),
-        new("basement-signals-emergency-telephones", "cd-basement-signals-04", new Vector3(4.85f, 0.31f, -0.65f), -24f, false),
+        new("amuse-absolution-ish", "cd-amuse-01", Vector3.zero, 0f, true),
+        new("black-afternoon-broken-television", "cd-black-afternoon-01", Vector3.zero, 0f, true),
+        new("black-afternoon-broken-television", "cd-black-afternoon-02", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-clever-person-01", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-clever-person-02", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-clever-person-03", new Vector3(0f, 1.13f, 0.65f), -8f, false),
+        new("blue-day-warning-ish", "cd-blue-day-warning-01", Vector3.zero, 0f, true),
+        new("blue-day-warning-ish", "cd-blue-day-warning-02", new Vector3(4.85f, 0.31f, -0.65f), -24f, false),
         new("grey-parade-the-grey-parade", "cd-grey-parade-01", Vector3.zero, 0f, true),
         new("grey-parade-the-grey-parade", "cd-grey-parade-02", Vector3.zero, 0f, true),
-        new("grey-parade-the-grey-parade", "cd-grey-parade-03", Vector3.zero, 0f, true),
         new("grey-parade-the-grey-parade", "cd-grey-parade-04", new Vector3(-4.55f, 0.93f, 1.25f), 12f, false),
         new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-01", Vector3.zero, 0f, true),
         new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-02", Vector3.zero, 0f, true),
@@ -29,25 +27,15 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         new("late-returns-platforms", "cd-late-returns-01", Vector3.zero, 0f, true),
         new("late-returns-platforms", "cd-late-returns-02", Vector3.zero, 0f, true),
         new("late-returns-platforms", "cd-late-returns-03", new Vector3(4.45f, 0.93f, 0.85f), -32f, false),
-        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-01", Vector3.zero, 0f, true),
-        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-02", Vector3.zero, 0f, true),
-        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-03", Vector3.zero, 0f, true),
-        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-04", new Vector3(1.15f, 0.31f, -3.75f), -18f, false),
         new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-01", Vector3.zero, 0f, true),
-        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-02", new Vector3(5.05f, 1.23f, -2.35f), -10f, false),
-        new("amuse-absolution-ish", "cd-amuse-01", Vector3.zero, 0f, true),
-        new("amuse-absolution-ish", "cd-amuse-02", Vector3.zero, 0f, true),
-        new("amuse-absolution-ish", "cd-amuse-03", Vector3.zero, 0f, true)
+        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-02", new Vector3(5.05f, 1.23f, -2.35f), -10f, false)
     };
 
     private readonly ShelfSpawn[] shelves =
     {
-        new("Rock", "A", new Vector3(-5.75f, 0f, 3.65f)),
-        new("Rock", "B", new Vector3(-3.45f, 0f, 3.65f)),
-        new("Rock", "G", new Vector3(-1.15f, 0f, 3.65f)),
-        new("Rock", "L", new Vector3(1.15f, 0f, 3.65f)),
-        new("Rock", "M", new Vector3(3.45f, 0f, 3.65f)),
-        new("Indie", "T", new Vector3(5.75f, 0f, 3.65f))
+        new("Rock", "A", "G", new Vector3(-4.6f, 0f, 3.65f)),
+        new("Rock", "L", "M", new Vector3(0f, 0f, 3.65f)),
+        new("Indie", "T", "T", new Vector3(4.6f, 0f, 3.65f))
     };
 
     private void Awake()
@@ -61,7 +49,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         }
 
         Dictionary<string, AlbumDefinition> albumDefinitions = LoadAlbumDefinitions();
-        Dictionary<string, ShelfSlot> shelfSlots = new();
+        List<ShelfSlot> shelfSlots = new();
         ConfigureShelf(shelfTemplate, shelves[0]);
         AddShelfSlot(shelfSlots, shelfTemplate, shelves[0]);
 
@@ -90,7 +78,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
         if (shelfTemplate == null)
         {
-            GameObject shelfObject = GameObject.Find("ROCK B Shelf Section");
+            GameObject shelfObject = GameObject.Find("ROCK A-G Shelf Section");
             shelfTemplate = shelfObject != null ? shelfObject.transform : null;
         }
     }
@@ -118,7 +106,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         GameObject cdObject,
         CopySpawn copy,
         Dictionary<string, AlbumDefinition> albumDefinitions,
-        Dictionary<string, ShelfSlot> shelfSlots)
+        List<ShelfSlot> shelfSlots)
     {
         if (!albumDefinitions.TryGetValue(copy.CatalogueId, out AlbumDefinition albumDefinition))
         {
@@ -144,7 +132,8 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             return;
         }
 
-        if (shelfSlots.TryGetValue(KeyFor(albumDefinition.Genre, albumDefinition.SortKey), out ShelfSlot shelfSlot))
+        ShelfSlot shelfSlot = FindShelfSlotFor(albumDefinition, shelfSlots);
+        if (shelfSlot != null)
         {
             shelfSlot.TryPlaceStartingItem(cdObject.GetComponent<PhysicalInteractable>());
         }
@@ -152,24 +141,24 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private static void ConfigureShelf(Transform shelf, ShelfSpawn shelfData)
     {
-        shelf.name = $"{shelfData.Genre.ToUpperInvariant()} {shelfData.SortKey.ToUpperInvariant()} Shelf Section";
+        shelf.name = $"{shelfData.Genre.ToUpperInvariant()} {shelfData.ArtistRangeLabel.ToUpperInvariant()} Shelf Section";
         shelf.position = shelfData.Position;
 
         ShelfSlot slot = shelf.GetComponentInChildren<ShelfSlot>();
         if (slot != null)
         {
-            slot.name = $"{shelfData.Genre.ToUpperInvariant()} {shelfData.SortKey.ToUpperInvariant()} Placement Slot";
-            slot.Configure(shelfData.Genre, shelfData.SortKey);
+            slot.name = $"{shelfData.Genre.ToUpperInvariant()} {shelfData.ArtistRangeLabel.ToUpperInvariant()} Placement Slot";
+            slot.Configure(shelfData.Genre, shelfData.ArtistRangeStart, shelfData.ArtistRangeEnd);
         }
 
         ShelfSectionLabel label = shelf.GetComponent<ShelfSectionLabel>();
         if (label != null)
         {
-            label.Configure(shelfData.Genre, shelfData.SortKey);
+            label.Configure(shelfData.Genre, shelfData.ArtistRangeLabel);
         }
     }
 
-    private static void AddShelfSlot(Dictionary<string, ShelfSlot> shelfSlots, Transform shelf, ShelfSpawn shelfData)
+    private static void AddShelfSlot(List<ShelfSlot> shelfSlots, Transform shelf, ShelfSpawn shelfData)
     {
         ShelfSlot slot = shelf.GetComponentInChildren<ShelfSlot>();
         if (slot == null)
@@ -177,12 +166,21 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             return;
         }
 
-        shelfSlots[KeyFor(shelfData.Genre, shelfData.SortKey)] = slot;
+        shelfSlots.Add(slot);
     }
 
-    private static string KeyFor(string genre, string sortKey)
+    private static ShelfSlot FindShelfSlotFor(AlbumDefinition albumDefinition, List<ShelfSlot> shelfSlots)
     {
-        return $"{genre.ToUpperInvariant()}:{sortKey.ToUpperInvariant()}";
+        for (int i = 0; i < shelfSlots.Count; i++)
+        {
+            ShelfSlot shelfSlot = shelfSlots[i];
+            if (shelfSlot != null && shelfSlot.CanAccept(albumDefinition))
+            {
+                return shelfSlot;
+            }
+        }
+
+        return null;
     }
 
     private readonly struct CopySpawn
@@ -205,15 +203,18 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private readonly struct ShelfSpawn
     {
-        public ShelfSpawn(string genre, string sortKey, Vector3 position)
+        public ShelfSpawn(string genre, string artistRangeStart, string artistRangeEnd, Vector3 position)
         {
             Genre = genre;
-            SortKey = sortKey;
+            ArtistRangeStart = artistRangeStart;
+            ArtistRangeEnd = artistRangeEnd;
             Position = position;
         }
 
         public string Genre { get; }
-        public string SortKey { get; }
+        public string ArtistRangeStart { get; }
+        public string ArtistRangeEnd { get; }
+        public string ArtistRangeLabel => $"{ArtistRangeStart}-{ArtistRangeEnd}";
         public Vector3 Position { get; }
     }
 }

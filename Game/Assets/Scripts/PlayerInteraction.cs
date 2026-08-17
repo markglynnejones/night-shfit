@@ -10,6 +10,7 @@ public sealed class PlayerInteraction : MonoBehaviour
 
     private PhysicalInteractable heldItem;
     private readonly RaycastHit[] hits = new RaycastHit[8];
+    private ShelfSlot[] shelfSlots = new ShelfSlot[0];
 
     private void Awake()
     {
@@ -35,6 +36,11 @@ public sealed class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
+        if (heldItem != null)
+        {
+            RefreshPlacementHints();
+        }
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null || !keyboard.eKey.wasPressedThisFrame)
         {
@@ -70,6 +76,8 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         heldItem = interactable;
         heldItem.PickUp(holdPoint);
+        shelfSlots = Object.FindObjectsByType<ShelfSlot>(FindObjectsInactive.Exclude);
+        RefreshPlacementHints();
     }
 
     private PhysicalInteractable FindLookedAtInteractable()
@@ -103,26 +111,28 @@ public sealed class PlayerInteraction : MonoBehaviour
             return false;
         }
 
-        ShelfSlot shelfSlot = FindLookedAtShelfSlot();
-        if (shelfSlot == null)
+        if (!TryFindLookedAtShelfSlot(out ShelfSlot shelfSlot, out Vector3 placementPoint))
         {
             return false;
         }
 
-        if (shelfSlot.TryPlace(heldItem))
+        if (shelfSlot.TryPlace(heldItem, placementPoint))
         {
             heldItem = null;
+            HidePlacementHints();
         }
 
         return true;
     }
 
-    private ShelfSlot FindLookedAtShelfSlot()
+    private bool TryFindLookedAtShelfSlot(out ShelfSlot closestShelfSlot, out Vector3 closestHitPoint)
     {
+        closestShelfSlot = null;
+        closestHitPoint = Vector3.zero;
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange, interactionLayers, QueryTriggerInteraction.Ignore);
 
-        ShelfSlot closestShelfSlot = null;
         float closestDistance = float.MaxValue;
 
         for (int i = 0; i < hitCount; i++)
@@ -135,15 +145,38 @@ public sealed class PlayerInteraction : MonoBehaviour
             }
 
             closestShelfSlot = shelfSlot;
+            closestHitPoint = hit.point;
             closestDistance = hit.distance;
         }
 
-        return closestShelfSlot;
+        return closestShelfSlot != null;
     }
 
     private void DropHeldItem()
     {
         heldItem.Drop();
         heldItem = null;
+        HidePlacementHints();
+    }
+
+    private void RefreshPlacementHints()
+    {
+        HidePlacementHints();
+
+        if (TryFindLookedAtShelfSlot(out ShelfSlot shelfSlot, out Vector3 placementPoint))
+        {
+            shelfSlot.ShowPlacementHintFor(heldItem, placementPoint);
+        }
+    }
+
+    private void HidePlacementHints()
+    {
+        for (int i = 0; i < shelfSlots.Length; i++)
+        {
+            if (shelfSlots[i] != null)
+            {
+                shelfSlots[i].HidePlacementHint();
+            }
+        }
     }
 }
