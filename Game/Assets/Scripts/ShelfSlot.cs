@@ -5,7 +5,8 @@ public sealed class ShelfSlot : MonoBehaviour
     [SerializeField] private string acceptedGenre = "Rock";
     [SerializeField] private string acceptedSortKey = "B";
     [SerializeField] private Transform snapPoint = null;
-    [SerializeField] private float itemSpacing = 0.12f;
+    [SerializeField] private float itemSpacing = 0.11f;
+    [SerializeField] private int maxItems = 14;
 
     private static readonly Vector3 ShelvedEulerAngles = new(0f, -90f, 0f);
     private const float ShelfDepthOffset = 0.38f;
@@ -21,6 +22,12 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public bool TryPlace(PhysicalInteractable item)
     {
+        if (placedItems.Count >= maxItems)
+        {
+            Debug.Log("This shelf section is full.");
+            return false;
+        }
+
         if (!CanAccept(item))
         {
             Debug.Log("That CD does not belong in this shelf slot.");
@@ -80,6 +87,8 @@ public sealed class ShelfSlot : MonoBehaviour
 
     private void ReflowPlacedItems()
     {
+        placedItems.Sort(CompareShelfOrder);
+
         for (int i = 0; i < placedItems.Count; i++)
         {
             placedItems[i].MoveWithinShelf(LocalOffsetForIndex(i));
@@ -95,5 +104,23 @@ public sealed class ShelfSlot : MonoBehaviour
     private static bool Matches(string actual, string expected)
     {
         return string.Equals(actual, expected, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int CompareShelfOrder(PhysicalInteractable left, PhysicalInteractable right)
+    {
+        MediaItem leftMediaItem = left != null ? left.GetComponent<MediaItem>() : null;
+        MediaItem rightMediaItem = right != null ? right.GetComponent<MediaItem>() : null;
+        string leftCatalogueId = leftMediaItem != null && leftMediaItem.AlbumDefinition != null ? leftMediaItem.AlbumDefinition.CatalogueId : string.Empty;
+        string rightCatalogueId = rightMediaItem != null && rightMediaItem.AlbumDefinition != null ? rightMediaItem.AlbumDefinition.CatalogueId : string.Empty;
+
+        int catalogueComparison = string.Compare(leftCatalogueId, rightCatalogueId, System.StringComparison.OrdinalIgnoreCase);
+        if (catalogueComparison != 0)
+        {
+            return catalogueComparison;
+        }
+
+        string leftPhysicalId = leftMediaItem != null ? leftMediaItem.PhysicalItemId : string.Empty;
+        string rightPhysicalId = rightMediaItem != null ? rightMediaItem.PhysicalItemId : string.Empty;
+        return string.Compare(leftPhysicalId, rightPhysicalId, System.StringComparison.OrdinalIgnoreCase);
     }
 }

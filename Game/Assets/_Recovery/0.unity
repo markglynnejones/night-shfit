@@ -2061,6 +2061,8 @@ MonoBehaviour:
   acceptedGenre: Rock
   acceptedSortKey: B
   snapPoint: {fileID: 307001}
+  itemSpacing: 0.11
+  maxItems: 14
 --- !u!1 &307000
 GameObject:
   m_ObjectHideFlags: 0

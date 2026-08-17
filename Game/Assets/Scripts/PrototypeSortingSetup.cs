@@ -10,27 +10,44 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
     {
         new("blue-day-international-clever-person", "cd-blue-day-01", Vector3.zero, 0f, true),
         new("blue-day-international-clever-person", "cd-blue-day-02", Vector3.zero, 0f, true),
-        new("blue-day-international-clever-person", "cd-blue-day-03", new Vector3(0f, 1.13f, 0.65f), -8f, false),
-        new("blue-day-international-clever-person", "cd-blue-day-04", new Vector3(4.85f, 0.31f, -0.65f), -24f, false),
+        new("blue-day-international-clever-person", "cd-blue-day-03", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-04", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-05", new Vector3(0f, 1.13f, 0.65f), -8f, false),
+        new("basement-signals-emergency-telephones", "cd-basement-signals-01", Vector3.zero, 0f, true),
+        new("basement-signals-emergency-telephones", "cd-basement-signals-02", Vector3.zero, 0f, true),
+        new("basement-signals-emergency-telephones", "cd-basement-signals-03", Vector3.zero, 0f, true),
+        new("basement-signals-emergency-telephones", "cd-basement-signals-04", new Vector3(4.85f, 0.31f, -0.65f), -24f, false),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-01", Vector3.zero, 0f, true),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-02", Vector3.zero, 0f, true),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-03", Vector3.zero, 0f, true),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-04", new Vector3(-4.55f, 0.93f, 1.25f), 12f, false),
         new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-01", Vector3.zero, 0f, true),
-        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-02", new Vector3(-4.5f, 0.31f, -1.6f), 28f, false),
-        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-03", new Vector3(4.45f, 0.93f, 0.85f), -32f, false),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-02", Vector3.zero, 0f, true),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-03", Vector3.zero, 0f, true),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-04", Vector3.zero, 0f, true),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-05", new Vector3(-4.5f, 0.31f, -1.6f), 28f, false),
+        new("late-returns-platforms", "cd-late-returns-01", Vector3.zero, 0f, true),
+        new("late-returns-platforms", "cd-late-returns-02", Vector3.zero, 0f, true),
+        new("late-returns-platforms", "cd-late-returns-03", new Vector3(4.45f, 0.93f, 0.85f), -32f, false),
+        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-01", Vector3.zero, 0f, true),
+        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-02", Vector3.zero, 0f, true),
+        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-03", Vector3.zero, 0f, true),
+        new("motorway-service-station-heartbreak-at-junction-12", "cd-motorway-service-station-04", new Vector3(1.15f, 0.31f, -3.75f), -18f, false),
         new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-01", Vector3.zero, 0f, true),
         new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-02", new Vector3(5.05f, 1.23f, -2.35f), -10f, false),
-        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-03", new Vector3(-1.1f, 0.31f, -3.3f), 16f, false),
-        new("grey-parade-the-grey-parade", "cd-grey-parade-01", Vector3.zero, 0f, true),
-        new("grey-parade-the-grey-parade", "cd-grey-parade-02", new Vector3(-4.55f, 0.93f, 1.25f), 12f, false),
         new("amuse-absolution-ish", "cd-amuse-01", Vector3.zero, 0f, true),
-        new("amuse-absolution-ish", "cd-amuse-02", new Vector3(1.15f, 0.31f, -3.75f), -18f, false)
+        new("amuse-absolution-ish", "cd-amuse-02", Vector3.zero, 0f, true),
+        new("amuse-absolution-ish", "cd-amuse-03", Vector3.zero, 0f, true)
     };
 
     private readonly ShelfSpawn[] shelves =
     {
-        new("Rock", "A", new Vector3(-5.2f, 0f, 3.65f)),
-        new("Rock", "B", new Vector3(-2.6f, 0f, 3.65f)),
-        new("Rock", "G", new Vector3(0f, 0f, 3.65f)),
-        new("Rock", "L", new Vector3(2.6f, 0f, 3.65f)),
-        new("Indie", "T", new Vector3(5.2f, 0f, 3.65f))
+        new("Rock", "A", new Vector3(-5.75f, 0f, 3.65f)),
+        new("Rock", "B", new Vector3(-3.45f, 0f, 3.65f)),
+        new("Rock", "G", new Vector3(-1.15f, 0f, 3.65f)),
+        new("Rock", "L", new Vector3(1.15f, 0f, 3.65f)),
+        new("Rock", "M", new Vector3(3.45f, 0f, 3.65f)),
+        new("Indie", "T", new Vector3(5.75f, 0f, 3.65f))
     };
 
     private void Awake()
