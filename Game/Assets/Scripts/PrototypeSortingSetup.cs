@@ -6,28 +6,31 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
     [SerializeField] private PhysicalInteractable cdTemplate = null;
     [SerializeField] private Transform shelfTemplate = null;
 
-    private readonly AlbumSpawn[] albums =
+    private readonly CopySpawn[] copies =
     {
-        new("Blue Day", "International Clever Person", "Rock", "B", new Vector3(0f, 1.13f, 0.65f), -8f, false),
-        new("Lincoln Gardens", "Hybrid Hypothesis", "Rock", "L", new Vector3(-4.5f, 0.31f, -1.6f), 28f, false),
-        new("Tropical Apes", "Whatever People Think I Am", "Indie", "T", new Vector3(5.05f, 1.23f, -2.35f), -10f, false),
-        new("Basement Signals", "Emergency Telephones", "Rock", "B", Vector3.zero, 0f, true),
-        new("Late Night Chemistry", "Youth Club Rules", "Rock", "L", Vector3.zero, 0f, true),
-        new("Tape Parade", "Songs for Taxi Queues", "Indie", "T", Vector3.zero, 0f, true),
-        new("Northern Exit", "Last Train Home", "Indie", "N", Vector3.zero, 0f, true),
-        new("Motorway Service Station", "Heartbreak at Junction 12", "Rock", "M", new Vector3(-4.55f, 0.93f, 1.25f), 12f, false),
-        new("Neon Weekends", "Photobooth Alibis", "Indie", "N", new Vector3(4.45f, 0.93f, 0.85f), -32f, false),
-        new("Paper Plan Committee", "Plans We Made At Midnight", "Indie", "P", new Vector3(-1.1f, 0.31f, -3.3f), 16f, false)
+        new("blue-day-international-clever-person", "cd-blue-day-01", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-02", Vector3.zero, 0f, true),
+        new("blue-day-international-clever-person", "cd-blue-day-03", new Vector3(0f, 1.13f, 0.65f), -8f, false),
+        new("blue-day-international-clever-person", "cd-blue-day-04", new Vector3(4.85f, 0.31f, -0.65f), -24f, false),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-01", Vector3.zero, 0f, true),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-02", new Vector3(-4.5f, 0.31f, -1.6f), 28f, false),
+        new("lincoln-gardens-hybrid-hypothesis", "cd-lincoln-gardens-03", new Vector3(4.45f, 0.93f, 0.85f), -32f, false),
+        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-01", Vector3.zero, 0f, true),
+        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-02", new Vector3(5.05f, 1.23f, -2.35f), -10f, false),
+        new("tropical-apes-whatever-people-think-i-am", "cd-tropical-apes-03", new Vector3(-1.1f, 0.31f, -3.3f), 16f, false),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-01", Vector3.zero, 0f, true),
+        new("grey-parade-the-grey-parade", "cd-grey-parade-02", new Vector3(-4.55f, 0.93f, 1.25f), 12f, false),
+        new("amuse-absolution-ish", "cd-amuse-01", Vector3.zero, 0f, true),
+        new("amuse-absolution-ish", "cd-amuse-02", new Vector3(1.15f, 0.31f, -3.75f), -18f, false)
     };
 
     private readonly ShelfSpawn[] shelves =
     {
-        new("Rock", "B", new Vector3(-5.2f, 0f, 3.65f)),
-        new("Rock", "L", new Vector3(-2.6f, 0f, 3.65f)),
-        new("Rock", "M", new Vector3(0f, 0f, 3.65f)),
-        new("Indie", "N", new Vector3(2.6f, 0f, 3.65f)),
-        new("Indie", "P", new Vector3(5.2f, 0f, 3.65f)),
-        new("Indie", "T", new Vector3(0f, 0f, 2.15f))
+        new("Rock", "A", new Vector3(-5.2f, 0f, 3.65f)),
+        new("Rock", "B", new Vector3(-2.6f, 0f, 3.65f)),
+        new("Rock", "G", new Vector3(0f, 0f, 3.65f)),
+        new("Rock", "L", new Vector3(2.6f, 0f, 3.65f)),
+        new("Indie", "T", new Vector3(5.2f, 0f, 3.65f))
     };
 
     private void Awake()
@@ -40,6 +43,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             return;
         }
 
+        Dictionary<string, AlbumDefinition> albumDefinitions = LoadAlbumDefinitions();
         Dictionary<string, ShelfSlot> shelfSlots = new();
         ConfigureShelf(shelfTemplate, shelves[0]);
         AddShelfSlot(shelfSlots, shelfTemplate, shelves[0]);
@@ -51,11 +55,11 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             AddShelfSlot(shelfSlots, shelfInstance, shelves[i]);
         }
 
-        ConfigureCd(cdTemplate.gameObject, albums[0], shelfSlots);
-        for (int i = 1; i < albums.Length; i++)
+        ConfigureCd(cdTemplate.gameObject, copies[0], albumDefinitions, shelfSlots);
+        for (int i = 1; i < copies.Length; i++)
         {
             GameObject cdInstance = Instantiate(cdTemplate.gameObject);
-            ConfigureCd(cdInstance, albums[i], shelfSlots);
+            ConfigureCd(cdInstance, copies[i], albumDefinitions, shelfSlots);
         }
     }
 
@@ -74,14 +78,49 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         }
     }
 
-    private static void ConfigureCd(GameObject cdObject, AlbumSpawn album, Dictionary<string, ShelfSlot> shelfSlots)
+    private static Dictionary<string, AlbumDefinition> LoadAlbumDefinitions()
     {
-        cdObject.name = $"{album.Artist} CD Case";
-        cdObject.transform.position = album.Position;
-        cdObject.transform.rotation = Quaternion.Euler(0f, album.Yaw, 0f);
+        AlbumDefinition[] definitions = Resources.LoadAll<AlbumDefinition>("Albums");
+        Dictionary<string, AlbumDefinition> definitionsById = new();
 
-        AlbumInfo albumInfo = cdObject.GetComponent<AlbumInfo>();
-        albumInfo.Configure(album.Artist, album.Album, album.Genre, album.SortKey);
+        for (int i = 0; i < definitions.Length; i++)
+        {
+            AlbumDefinition definition = definitions[i];
+            if (definition == null || string.IsNullOrWhiteSpace(definition.CatalogueId))
+            {
+                continue;
+            }
+
+            definitionsById[definition.CatalogueId] = definition;
+        }
+
+        return definitionsById;
+    }
+
+    private static void ConfigureCd(
+        GameObject cdObject,
+        CopySpawn copy,
+        Dictionary<string, AlbumDefinition> albumDefinitions,
+        Dictionary<string, ShelfSlot> shelfSlots)
+    {
+        if (!albumDefinitions.TryGetValue(copy.CatalogueId, out AlbumDefinition albumDefinition))
+        {
+            Debug.LogWarning($"Missing album definition for catalogue ID '{copy.CatalogueId}'.");
+            cdObject.SetActive(false);
+            return;
+        }
+
+        cdObject.name = $"{albumDefinition.ArtistName} CD Case ({copy.PhysicalItemId})";
+        cdObject.transform.position = copy.Position;
+        cdObject.transform.rotation = Quaternion.Euler(0f, copy.Yaw, 0f);
+
+        MediaItem mediaItem = cdObject.GetComponent<MediaItem>();
+        if (mediaItem == null)
+        {
+            mediaItem = cdObject.AddComponent<MediaItem>();
+        }
+
+        mediaItem.Configure(albumDefinition, copy.PhysicalItemId);
 
         ShiftItem shiftItem = cdObject.GetComponent<ShiftItem>();
         if (shiftItem == null)
@@ -89,15 +128,15 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             shiftItem = cdObject.AddComponent<ShiftItem>();
         }
 
-        shiftItem.Configure(!album.StartsShelved, album.StartsShelved);
+        shiftItem.Configure(!copy.StartsShelved, copy.StartsShelved);
         ShiftManager.Instance?.RegisterItem(shiftItem);
 
-        if (!album.StartsShelved)
+        if (!copy.StartsShelved)
         {
             return;
         }
 
-        if (shelfSlots.TryGetValue(KeyFor(album.Genre, album.SortKey), out ShelfSlot shelfSlot))
+        if (shelfSlots.TryGetValue(KeyFor(albumDefinition.Genre, albumDefinition.SortKey), out ShelfSlot shelfSlot))
         {
             shelfSlot.TryPlaceStartingItem(cdObject.GetComponent<PhysicalInteractable>());
         }
@@ -138,23 +177,19 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         return $"{genre.ToUpperInvariant()}:{sortKey.ToUpperInvariant()}";
     }
 
-    private readonly struct AlbumSpawn
+    private readonly struct CopySpawn
     {
-        public AlbumSpawn(string artist, string album, string genre, string sortKey, Vector3 position, float yaw, bool startsShelved)
+        public CopySpawn(string catalogueId, string physicalItemId, Vector3 position, float yaw, bool startsShelved)
         {
-            Artist = artist;
-            Album = album;
-            Genre = genre;
-            SortKey = sortKey;
+            CatalogueId = catalogueId;
+            PhysicalItemId = physicalItemId;
             Position = position;
             Yaw = yaw;
             StartsShelved = startsShelved;
         }
 
-        public string Artist { get; }
-        public string Album { get; }
-        public string Genre { get; }
-        public string SortKey { get; }
+        public string CatalogueId { get; }
+        public string PhysicalItemId { get; }
         public Vector3 Position { get; }
         public float Yaw { get; }
         public bool StartsShelved { get; }

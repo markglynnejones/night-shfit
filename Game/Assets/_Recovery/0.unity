@@ -1138,13 +1138,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 200000}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 82e4f5ef3e5a4d9ca7893b4156fa4039, type: 3}
+  m_Script: {fileID: 11500000, guid: d67a6f20d6bf42ae8c2b0b99fe57d10d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  artist: Blue Day
-  album: International Clever Person
-  genre: Rock
-  sortKey: B
+  albumDefinition: {fileID: 11400000, guid: a11b22c33d444e55a66f77889900abcd, type: 2}
+  physicalItemId: cd-blue-day-template
 --- !u!114 &200006
 MonoBehaviour:
   m_ObjectHideFlags: 0

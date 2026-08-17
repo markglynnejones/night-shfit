@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(AlbumInfo))]
+[RequireComponent(typeof(MediaItem))]
 public sealed class AlbumCaseLabel : MonoBehaviour
 {
     [SerializeField] private Color frontTextColor = Color.white;
@@ -17,10 +17,17 @@ public sealed class AlbumCaseLabel : MonoBehaviour
 
     private void Start()
     {
-        AlbumInfo albumInfo = GetComponent<AlbumInfo>();
-        string wrappedArtist = WrapText(albumInfo.Artist.ToUpperInvariant(), 9);
-        string wrappedAlbumTitle = WrapText(albumInfo.Album, 14);
-        string spineText = FormatSpineText(albumInfo);
+        MediaItem mediaItem = GetComponent<MediaItem>();
+        AlbumDefinition albumDefinition = mediaItem.AlbumDefinition;
+        if (albumDefinition == null)
+        {
+            Debug.LogWarning($"{name} has no album definition for its case label.");
+            return;
+        }
+
+        string wrappedArtist = WrapText(albumDefinition.ArtistName.ToUpperInvariant(), 9);
+        string wrappedAlbumTitle = WrapText(albumDefinition.AlbumTitle, 14);
+        string spineText = FormatSpineText(albumDefinition);
 
         frontArtistLabel = CreateText(
             "Front Artist Label",
@@ -158,9 +165,9 @@ public sealed class AlbumCaseLabel : MonoBehaviour
         return $"{existingText}\n{line}";
     }
 
-    private static string FormatSpineText(AlbumInfo albumInfo)
+    private static string FormatSpineText(AlbumDefinition albumDefinition)
     {
-        return $"{albumInfo.Artist} \u2022 {albumInfo.Album}".ToUpperInvariant();
+        return $"{albumDefinition.ArtistName} \u2022 {albumDefinition.AlbumTitle}".ToUpperInvariant();
     }
 
     private static float SizeForText(string text, float maximumSize, int comfortableLineLength)

@@ -30,8 +30,8 @@ public sealed class ShelfSlot : MonoBehaviour
         PlaceItem(item);
         ShiftManager.Instance?.NotifyItemPlaced(item);
 
-        AlbumInfo albumInfo = item.GetComponent<AlbumInfo>();
-        Debug.Log($"Placed {albumInfo.Artist} - {albumInfo.Album} in {acceptedGenre} / {acceptedSortKey}.");
+        AlbumDefinition albumDefinition = item.GetComponent<MediaItem>().AlbumDefinition;
+        Debug.Log($"Placed {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {acceptedSortKey}.");
         return true;
     }
 
@@ -61,13 +61,14 @@ public sealed class ShelfSlot : MonoBehaviour
             return false;
         }
 
-        AlbumInfo albumInfo = item.GetComponent<AlbumInfo>();
-        if (albumInfo == null)
+        MediaItem mediaItem = item.GetComponent<MediaItem>();
+        if (mediaItem == null || mediaItem.AlbumDefinition == null)
         {
             return false;
         }
 
-        return Matches(albumInfo.Genre, acceptedGenre) && Matches(albumInfo.SortKey, acceptedSortKey);
+        AlbumDefinition albumDefinition = mediaItem.AlbumDefinition;
+        return Matches(albumDefinition.Genre, acceptedGenre) && Matches(albumDefinition.SortKey, acceptedSortKey);
     }
 
     private void PlaceItem(PhysicalInteractable item)
