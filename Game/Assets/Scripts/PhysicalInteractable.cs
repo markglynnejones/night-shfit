@@ -8,6 +8,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     private Rigidbody body;
     private Transform originalParent;
+    private ShelfSlot currentShelfSlot;
 
     public bool IsHeld { get; private set; }
 
@@ -36,6 +37,8 @@ public sealed class PhysicalInteractable : MonoBehaviour
         }
 
         IsHeld = true;
+        currentShelfSlot?.ClearIfHolding(this);
+        currentShelfSlot = null;
 
         body.linearVelocity = Vector3.zero;
         body.angularVelocity = Vector3.zero;
@@ -65,5 +68,26 @@ public sealed class PhysicalInteractable : MonoBehaviour
         body.angularVelocity = Vector3.zero;
 
         IsHeld = false;
+    }
+
+    public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot)
+    {
+        if (snapPoint == null)
+        {
+            return;
+        }
+
+        IsHeld = false;
+        currentShelfSlot = shelfSlot;
+
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.useGravity = false;
+        body.isKinematic = true;
+        body.detectCollisions = true;
+
+        transform.SetParent(snapPoint, false);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
     }
 }

@@ -43,6 +43,11 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         if (heldItem != null)
         {
+            if (TryPlaceHeldItem())
+            {
+                return;
+            }
+
             DropHeldItem();
             return;
         }
@@ -89,6 +94,51 @@ public sealed class PlayerInteraction : MonoBehaviour
         }
 
         return closestInteractable;
+    }
+
+    private bool TryPlaceHeldItem()
+    {
+        if (playerCamera == null)
+        {
+            return false;
+        }
+
+        ShelfSlot shelfSlot = FindLookedAtShelfSlot();
+        if (shelfSlot == null)
+        {
+            return false;
+        }
+
+        if (shelfSlot.TryPlace(heldItem))
+        {
+            heldItem = null;
+        }
+
+        return true;
+    }
+
+    private ShelfSlot FindLookedAtShelfSlot()
+    {
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange, interactionLayers, QueryTriggerInteraction.Ignore);
+
+        ShelfSlot closestShelfSlot = null;
+        float closestDistance = float.MaxValue;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = hits[i];
+            ShelfSlot shelfSlot = hit.collider.GetComponentInParent<ShelfSlot>();
+            if (shelfSlot == null || hit.distance >= closestDistance)
+            {
+                continue;
+            }
+
+            closestShelfSlot = shelfSlot;
+            closestDistance = hit.distance;
+        }
+
+        return closestShelfSlot;
     }
 
     private void DropHeldItem()

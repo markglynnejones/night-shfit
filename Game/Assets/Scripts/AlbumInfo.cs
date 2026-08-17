@@ -11,4 +11,12 @@ public sealed class AlbumInfo : MonoBehaviour
     public string Album => album;
     public string Genre => genre;
     public string SortKey => sortKey;
+
+    public void Configure(string newArtist, string newAlbum, string newGenre, string newSortKey)
+    {
+        artist = newArtist;
+        album = newAlbum;
+        genre = newGenre;
+        sortKey = newSortKey;
+    }
 }

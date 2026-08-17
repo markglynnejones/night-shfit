@@ -9,36 +9,42 @@ public sealed class AlbumCaseLabel : MonoBehaviour
     private const float FrontZ = -0.047f;
     private const float SpineZ = -0.054f;
 
-    private void Awake()
+    private void Start()
     {
         AlbumInfo albumInfo = GetComponent<AlbumInfo>();
+        string wrappedArtist = WrapText(albumInfo.Artist.ToUpperInvariant(), 9);
+        string wrappedAlbumTitle = WrapText(albumInfo.Album, 14);
+        string spineText = FormatSpineText(albumInfo);
 
         CreateText(
             "Front Artist Label",
-            albumInfo.Artist.ToUpperInvariant(),
-            new Vector3(0.03f, 0.14f, FrontZ),
+            wrappedArtist,
+            new Vector3(0.03f, 0.15f, FrontZ),
             Quaternion.identity,
-            0.018f,
+            SizeForText(wrappedArtist, 0.011f, 9),
             frontTextColor,
-            transform);
+            transform,
+            0.8f);
 
         CreateText(
             "Front Album Label",
-            WrapTitle(albumInfo.Album),
-            new Vector3(0.03f, 0f, FrontZ),
+            wrappedAlbumTitle,
+            new Vector3(0.03f, -0.055f, FrontZ),
             Quaternion.identity,
-            0.013f,
+            SizeForText(wrappedAlbumTitle, 0.0088f, 13),
             frontTextColor,
-            transform);
+            transform,
+            0.82f);
 
         CreateText(
             "Spine Album Label",
-            FormatSpineText(albumInfo),
+            spineText,
             new Vector3(-0.34f, 0f, SpineZ),
             Quaternion.Euler(0f, 0f, 90f),
-            0.0034f,
+            SizeForText(spineText, 0.0024f, 34),
             spineTextColor,
-            transform);
+            transform,
+            0.9f);
     }
 
     private static void CreateText(
@@ -48,7 +54,8 @@ public sealed class AlbumCaseLabel : MonoBehaviour
         Quaternion localRotation,
         float characterSize,
         Color color,
-        Transform parent)
+        Transform parent,
+        float lineSpacing)
     {
         GameObject textObject = new GameObject(name);
         textObject.transform.SetParent(parent, false);
@@ -63,34 +70,68 @@ public sealed class AlbumCaseLabel : MonoBehaviour
         textMesh.fontSize = 64;
         textMesh.color = color;
         textMesh.richText = false;
-        textMesh.lineSpacing = 0.85f;
+        textMesh.lineSpacing = lineSpacing;
+
+        PrototypeTextMaterial.Apply(textMesh, color);
     }
 
-    private static string WrapTitle(string title)
+    private static string WrapText(string text, int maxLineLength)
     {
-        const int maxLineLength = 18;
+        string[] words = text.Split(' ');
+        string wrappedText = string.Empty;
+        string currentLine = string.Empty;
 
-        if (title.Length <= maxLineLength)
+        for (int i = 0; i < words.Length; i++)
         {
-            return title;
+            string word = words[i];
+            string candidate = string.IsNullOrEmpty(currentLine) ? word : $"{currentLine} {word}";
+
+            if (candidate.Length > maxLineLength && !string.IsNullOrEmpty(currentLine))
+            {
+                wrappedText = AppendLine(wrappedText, currentLine);
+                currentLine = word;
+            }
+            else
+            {
+                currentLine = candidate;
+            }
         }
 
-        int splitIndex = title.LastIndexOf(' ', maxLineLength);
-        if (splitIndex < 0)
+        return AppendLine(wrappedText, currentLine);
+    }
+
+    private static string AppendLine(string existingText, string line)
+    {
+        if (string.IsNullOrEmpty(existingText))
         {
-            splitIndex = title.IndexOf(' ', maxLineLength);
+            return line;
         }
 
-        if (splitIndex < 0)
-        {
-            return title;
-        }
-
-        return title.Remove(splitIndex, 1).Insert(splitIndex, "\n");
+        return $"{existingText}\n{line}";
     }
 
     private static string FormatSpineText(AlbumInfo albumInfo)
     {
         return $"{albumInfo.Artist} \u2022 {albumInfo.Album}".ToUpperInvariant();
+    }
+
+    private static float SizeForText(string text, float maximumSize, int comfortableLineLength)
+    {
+        int longestLineLength = LongestLineLength(text);
+        float scale = comfortableLineLength / (float)Mathf.Max(1, longestLineLength);
+        return maximumSize * Mathf.Min(1f, scale);
+    }
+
+    private static int LongestLineLength(string text)
+    {
+        string[] lines = text.Split('\n');
+        int longestLineLength = 0;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            longestLineLength = Mathf.Max(longestLineLength, lines[i].Length);
+        }
+
+        return longestLineLength;
     }
 }
