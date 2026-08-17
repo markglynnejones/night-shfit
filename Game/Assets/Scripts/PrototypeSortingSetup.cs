@@ -7,16 +7,16 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private readonly AlbumSpawn[] albums =
     {
-        new("Blue Day", "International Clever Person", "Rock", "B", new Vector3(0f, 1.13f, 1.35f), 0f),
-        new("Lincoln Gardens", "Hybrid Hypothesis", "Rock", "L", new Vector3(-4.8f, 0.31f, -2.4f), 25f),
-        new("Tropical Apes", "Whatever People Think I Am", "Indie", "T", new Vector3(3f, 1.31f, 1.5f), -20f)
+        new("Blue Day", "International Clever Person", "Rock", "B", new Vector3(0f, 1.13f, 0.65f), -8f),
+        new("Lincoln Gardens", "Hybrid Hypothesis", "Rock", "L", new Vector3(-4.5f, 0.31f, -1.6f), 28f),
+        new("Tropical Apes", "Whatever People Think I Am", "Indie", "T", new Vector3(4.6f, 1.23f, -2.6f), -18f)
     };
 
     private readonly ShelfSpawn[] shelves =
     {
-        new("Rock", "B", new Vector3(-3.2f, 0f, 3.4f)),
-        new("Rock", "L", new Vector3(0f, 0f, 3.4f)),
-        new("Indie", "T", new Vector3(3.2f, 0f, 3.4f))
+        new("Rock", "B", new Vector3(-2.55f, 0f, 3.65f)),
+        new("Rock", "L", new Vector3(0f, 0f, 3.65f)),
+        new("Indie", "T", new Vector3(2.55f, 0f, 3.65f))
     };
 
     private void Awake()
