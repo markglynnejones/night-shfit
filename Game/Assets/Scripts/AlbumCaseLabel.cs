@@ -9,6 +9,12 @@ public sealed class AlbumCaseLabel : MonoBehaviour
     private const float FrontZ = -0.047f;
     private const float SpineZ = -0.054f;
 
+    private GameObject frontArtistLabel;
+    private GameObject frontAlbumLabel;
+    private GameObject frontSpineLabel;
+    private GameObject shelfSpineLabel;
+    private bool shelfMode;
+
     private void Start()
     {
         AlbumInfo albumInfo = GetComponent<AlbumInfo>();
@@ -16,7 +22,7 @@ public sealed class AlbumCaseLabel : MonoBehaviour
         string wrappedAlbumTitle = WrapText(albumInfo.Album, 14);
         string spineText = FormatSpineText(albumInfo);
 
-        CreateText(
+        frontArtistLabel = CreateText(
             "Front Artist Label",
             wrappedArtist,
             new Vector3(0.03f, 0.15f, FrontZ),
@@ -26,7 +32,7 @@ public sealed class AlbumCaseLabel : MonoBehaviour
             transform,
             0.8f);
 
-        CreateText(
+        frontAlbumLabel = CreateText(
             "Front Album Label",
             wrappedAlbumTitle,
             new Vector3(0.03f, -0.055f, FrontZ),
@@ -36,7 +42,7 @@ public sealed class AlbumCaseLabel : MonoBehaviour
             transform,
             0.82f);
 
-        CreateText(
+        frontSpineLabel = CreateText(
             "Spine Album Label",
             spineText,
             new Vector3(-0.34f, 0f, SpineZ),
@@ -45,9 +51,50 @@ public sealed class AlbumCaseLabel : MonoBehaviour
             spineTextColor,
             transform,
             0.9f);
+
+        shelfSpineLabel = CreateText(
+            "Shelf Spine Label",
+            spineText,
+            new Vector3(-0.392f, 0f, 0f),
+            Quaternion.Euler(0f, 90f, 90f),
+            SizeForText(spineText, 0.0022f, 34),
+            spineTextColor,
+            transform,
+            0.9f);
+
+        ApplyShelfMode();
     }
 
-    private static void CreateText(
+    public void SetShelfMode(bool enabled)
+    {
+        shelfMode = enabled;
+        ApplyShelfMode();
+    }
+
+    private void ApplyShelfMode()
+    {
+        if (frontArtistLabel != null)
+        {
+            frontArtistLabel.SetActive(!shelfMode);
+        }
+
+        if (frontAlbumLabel != null)
+        {
+            frontAlbumLabel.SetActive(!shelfMode);
+        }
+
+        if (frontSpineLabel != null)
+        {
+            frontSpineLabel.SetActive(!shelfMode);
+        }
+
+        if (shelfSpineLabel != null)
+        {
+            shelfSpineLabel.SetActive(shelfMode);
+        }
+    }
+
+    private static GameObject CreateText(
         string name,
         string text,
         Vector3 localPosition,
@@ -73,6 +120,7 @@ public sealed class AlbumCaseLabel : MonoBehaviour
         textMesh.lineSpacing = lineSpacing;
 
         PrototypeTextMaterial.Apply(textMesh, color);
+        return textObject;
     }
 
     private static string WrapText(string text, int maxLineLength)

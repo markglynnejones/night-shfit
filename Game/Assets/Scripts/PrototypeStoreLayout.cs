@@ -15,6 +15,7 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         AdjustExistingDisplayTable();
         CreateCheckoutCounter();
         CreateStaffDoor();
+        CreateClockOutPoint();
         CreateClosedEntrance();
         CreateMusicDepartmentDetails();
     }
@@ -54,6 +55,13 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         CreateCube("Staff Room Door", new Vector3(6.88f, 1.05f, 2.1f), new Vector3(0.05f, 2.1f, 0.95f), doorMaterial);
         CreateCube("Staff Door Handle", new Vector3(6.82f, 1.05f, 1.8f), new Vector3(0.06f, 0.08f, 0.08f), signageMaterial);
         CreateText("Staff Door Label", "STAFF", new Vector3(6.78f, 1.8f, 2.1f), 0.03f, Quaternion.Euler(0f, -90f, 0f));
+    }
+
+    private void CreateClockOutPoint()
+    {
+        GameObject clockOutPoint = CreateCube("Clock Out Point", new Vector3(6.35f, 1.05f, 2.85f), new Vector3(0.08f, 0.55f, 0.45f), signageMaterial);
+        clockOutPoint.AddComponent<ClockOutPoint>();
+        CreateText("Clock Out Label", "CLOCK\nOUT", new Vector3(6.29f, 1.08f, 2.85f), 0.024f, Quaternion.Euler(0f, -90f, 0f));
     }
 
     private void CreateClosedEntrance()

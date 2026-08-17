@@ -37,6 +37,13 @@ public sealed class PhysicalInteractable : MonoBehaviour
         }
 
         IsHeld = true;
+        SetShelfVisualMode(false);
+
+        if (currentShelfSlot != null)
+        {
+            ShiftManager.Instance?.NotifyItemPickedUp(this);
+        }
+
         currentShelfSlot?.ClearIfHolding(this);
         currentShelfSlot = null;
 
@@ -58,6 +65,8 @@ public sealed class PhysicalInteractable : MonoBehaviour
             return;
         }
 
+        SetShelfVisualMode(false);
+
         Transform currentParent = originalParent != null ? originalParent : null;
         transform.SetParent(currentParent, true);
 
@@ -72,6 +81,16 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot)
     {
+        PlaceOnShelf(snapPoint, shelfSlot, Vector3.zero);
+    }
+
+    public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot, Vector3 localOffset)
+    {
+        PlaceOnShelf(snapPoint, shelfSlot, localOffset, Vector3.zero);
+    }
+
+    public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot, Vector3 localOffset, Vector3 localEulerAngles)
+    {
         if (snapPoint == null)
         {
             return;
@@ -79,6 +98,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
         IsHeld = false;
         currentShelfSlot = shelfSlot;
+        SetShelfVisualMode(true);
 
         body.linearVelocity = Vector3.zero;
         body.angularVelocity = Vector3.zero;
@@ -87,7 +107,26 @@ public sealed class PhysicalInteractable : MonoBehaviour
         body.detectCollisions = true;
 
         transform.SetParent(snapPoint, false);
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
+        transform.localPosition = localOffset;
+        transform.localRotation = Quaternion.Euler(localEulerAngles);
+    }
+
+    public void MoveWithinShelf(Vector3 localOffset)
+    {
+        if (currentShelfSlot == null)
+        {
+            return;
+        }
+
+        transform.localPosition = localOffset;
+    }
+
+    private void SetShelfVisualMode(bool enabled)
+    {
+        AlbumCaseLabel label = GetComponent<AlbumCaseLabel>();
+        if (label != null)
+        {
+            label.SetShelfMode(enabled);
+        }
     }
 }
