@@ -1,0 +1,47 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Builds
+[Bb]uild/
+[Bb]uilds/
+
+# Memory captures
+[Mm]emoryCaptures/
+
+# Asset Store tools
+[Aa]ssets/AssetStoreTools*
+
+# Visual Studio
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Unity generated metadata
+sysinfo.txt
+
+# Crash reports
+crashlytics-build.properties
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
