@@ -64,6 +64,7 @@ public sealed class ShelfSlot : MonoBehaviour
         PlaceItem(item, insertionIndex);
 
         Debug.Log($"Placed {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {ArtistRangeLabel()}.");
+        PrototypeSaveLoadController.NotifyPersistentStateChanged();
         return true;
     }
 

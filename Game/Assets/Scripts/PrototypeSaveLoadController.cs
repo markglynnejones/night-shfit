@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -10,10 +11,25 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
 {
     private const int SaveFormatVersion = 1;
     private const string SaveFileName = "prototype-save.json";
+    private const string BackupSaveExtension = ".bak";
+    private const string TemporarySaveExtension = ".tmp";
     private const string LooseState = "Loose";
     private const string ShelvedState = "Shelved";
 
+    [SerializeField] private float autosaveDebounceSeconds = 2f;
+    [SerializeField] private float periodicAutosaveSeconds = 120f;
+
+    private static PrototypeSaveLoadController activeController;
+
+    private bool hasCompletedStartupLoad;
+    private bool isLoading;
+    private bool hasDirtyChanges;
+    private float nextAutosaveTime;
+    private float nextPeriodicAutosaveTime;
+
     private static string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
+    private static string BackupSavePath => SavePath + BackupSaveExtension;
+    private static string TemporarySavePath => SavePath + TemporarySaveExtension;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureControllerExists()
@@ -29,26 +45,118 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         new GameObject("Prototype Save Load Controller").AddComponent<PrototypeSaveLoadController>();
     }
 
-    private void Update()
+    public static void NotifyPersistentStateChanged()
     {
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard == null)
+        if (activeController == null)
         {
             return;
         }
 
-        if (keyboard.f5Key.wasPressedThisFrame)
-        {
-            SaveGame();
-        }
+        activeController.MarkPersistentStateChanged();
+    }
 
-        if (keyboard.f9Key.wasPressedThisFrame)
+    private void Awake()
+    {
+        activeController = this;
+        nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
+    }
+
+    private void Start()
+    {
+        StartCoroutine(LoadAfterPrototypeSetup());
+    }
+
+    private void OnDestroy()
+    {
+        if (activeController == this)
         {
-            LoadGame();
+            activeController = null;
         }
     }
 
-    private static void SaveGame()
+    private void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null)
+        {
+            if (keyboard.f5Key.wasPressedThisFrame)
+            {
+                SaveGame("Manual save");
+            }
+
+            if (keyboard.f9Key.wasPressedThisFrame)
+            {
+                LoadGame(LoadMode.Manual);
+            }
+        }
+
+        if (!hasCompletedStartupLoad || isLoading)
+        {
+            return;
+        }
+
+        if (hasDirtyChanges && Time.unscaledTime >= nextAutosaveTime)
+        {
+            SaveGame("Autosave");
+            return;
+        }
+
+        if (periodicAutosaveSeconds > 0f && Time.unscaledTime >= nextPeriodicAutosaveTime)
+        {
+            SaveGame("Periodic autosave");
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (!hasCompletedStartupLoad || isLoading)
+        {
+            return;
+        }
+
+        SaveGame("Quit save");
+    }
+
+    private IEnumerator LoadAfterPrototypeSetup()
+    {
+        yield return null;
+
+        if (!PrototypeSortingSetup.HasCompletedSetup
+            && UnityObject.FindObjectsByType<PrototypeSortingSetup>(FindObjectsInactive.Exclude).Length > 0)
+        {
+            bool setupCompleted = false;
+            void HandleSetupCompleted()
+            {
+                setupCompleted = true;
+            }
+
+            PrototypeSortingSetup.SetupCompleted += HandleSetupCompleted;
+            while (!setupCompleted && !PrototypeSortingSetup.HasCompletedSetup)
+            {
+                yield return null;
+            }
+
+            PrototypeSortingSetup.SetupCompleted -= HandleSetupCompleted;
+        }
+
+        LoadGame(LoadMode.Automatic);
+        hasCompletedStartupLoad = true;
+        hasDirtyChanges = false;
+        nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
+    }
+
+    private void MarkPersistentStateChanged()
+    {
+        if (!hasCompletedStartupLoad || isLoading)
+        {
+            return;
+        }
+
+        hasDirtyChanges = true;
+        nextAutosaveTime = Time.unscaledTime + Mathf.Max(0.1f, autosaveDebounceSeconds);
+    }
+
+    private void SaveGame(string reason)
     {
         PrototypeSaveData saveData = new()
         {
@@ -104,60 +212,171 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         try
         {
             string json = JsonUtility.ToJson(saveData, true);
-            File.WriteAllText(SavePath, json);
-            Debug.Log($"Game saved: {SavePath}");
+            SafeWriteSaveFile(json);
+            hasDirtyChanges = false;
+            nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
+            Debug.Log($"Game saved ({reason}): {SavePath}");
         }
         catch (Exception exception)
         {
+            nextAutosaveTime = Time.unscaledTime + Mathf.Max(1f, autosaveDebounceSeconds);
+            nextPeriodicAutosaveTime = Time.unscaledTime + Mathf.Max(1f, periodicAutosaveSeconds);
             Debug.LogError($"Game save failed: {exception.Message}");
         }
     }
 
-    private static void LoadGame()
+    private void LoadGame(LoadMode loadMode)
     {
-        if (!File.Exists(SavePath))
+        if (!TryReadSaveWithBackup(loadMode, out PrototypeSaveData saveData))
         {
-            Debug.LogWarning($"No save file found at {SavePath}.");
             return;
         }
 
-        PrototypeSaveData saveData;
+        isLoading = true;
         try
         {
-            saveData = JsonUtility.FromJson<PrototypeSaveData>(File.ReadAllText(SavePath));
+            EnsureSaveLists(saveData);
+            ClearHeldItems();
+
+            Dictionary<string, MediaItem> mediaItemsById = BuildMediaItemsById();
+            Dictionary<string, ShelfSlot> shelvesById = BuildShelvesById();
+
+            ResetSceneMediaToLoose(UnityObject.FindObjectsByType<MediaItem>(FindObjectsInactive.Exclude));
+            ClearShelfOccupancy(shelvesById.Values);
+            HashSet<string> restoredPhysicalIds = new();
+            RestoreLooseItems(saveData.looseMediaItems, mediaItemsById, restoredPhysicalIds);
+            RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById, shelvesById, restoredPhysicalIds);
+            RestorePlayer(saveData.player);
+
+            hasDirtyChanges = false;
+            nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
+            Debug.Log($"Game loaded: {SavePath}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static bool TryReadSaveWithBackup(LoadMode loadMode, out PrototypeSaveData saveData)
+    {
+        saveData = null;
+        bool mainExists = File.Exists(SavePath);
+        if (!mainExists)
+        {
+            if (loadMode == LoadMode.Manual)
+            {
+                Debug.LogWarning($"No save file found at {SavePath}.");
+            }
+            else
+            {
+                Debug.Log("No save file found; using authored prototype starting state.");
+            }
+
+            return false;
+        }
+
+        if (TryReadSaveFile(SavePath, out saveData, out string mainFailureReason))
+        {
+            return true;
+        }
+
+        Debug.LogWarning($"Could not load save file at {SavePath}: {mainFailureReason}");
+
+        string backupFailureReason = string.Empty;
+        if (File.Exists(BackupSavePath)
+            && TryReadSaveFile(BackupSavePath, out saveData, out backupFailureReason))
+        {
+            Debug.LogWarning($"Loaded backup save from {BackupSavePath}.");
+            return true;
+        }
+
+        if (File.Exists(BackupSavePath))
+        {
+            Debug.LogWarning($"Could not load backup save at {BackupSavePath}: {backupFailureReason}");
+        }
+
+        Debug.LogWarning("Falling back to authored prototype starting state.");
+        return false;
+    }
+
+    private static bool TryReadSaveFile(string path, out PrototypeSaveData saveData, out string failureReason)
+    {
+        saveData = null;
+        failureReason = string.Empty;
+
+        try
+        {
+            saveData = JsonUtility.FromJson<PrototypeSaveData>(File.ReadAllText(path));
         }
         catch (Exception exception)
         {
-            Debug.LogError($"Game load failed: {exception.Message}");
-            return;
+            failureReason = exception.Message;
+            return false;
         }
 
         if (saveData == null)
         {
-            Debug.LogWarning($"Save file at {SavePath} could not be read.");
-            return;
+            failureReason = "save data was empty or unreadable";
+            return false;
         }
 
-        if (saveData.version != SaveFormatVersion)
+        if (!IsSupportedVersion(saveData.version, out failureReason))
         {
-            Debug.LogWarning($"Save format version {saveData.version} is not supported by this prototype.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsSupportedVersion(int version, out string failureReason)
+    {
+        if (version == SaveFormatVersion)
+        {
+            failureReason = string.Empty;
+            return true;
+        }
+
+        failureReason = $"save format version {version} is not supported by this prototype";
+        return false;
+    }
+
+    private static void SafeWriteSaveFile(string json)
+    {
+        Directory.CreateDirectory(Application.persistentDataPath);
+
+        File.WriteAllText(TemporarySavePath, json);
+        FileInfo temporaryFile = new(TemporarySavePath);
+        if (!temporaryFile.Exists || temporaryFile.Length <= 0)
+        {
+            throw new IOException($"Temporary save file was not written correctly: {TemporarySavePath}");
+        }
+
+        if (!File.Exists(SavePath))
+        {
+            File.Move(TemporarySavePath, SavePath);
             return;
         }
 
-        EnsureSaveLists(saveData);
-        ClearHeldItems();
+        try
+        {
+            File.Replace(TemporarySavePath, SavePath, BackupSavePath);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            ReplaceSaveWithBackupFallback();
+        }
+        catch (IOException)
+        {
+            ReplaceSaveWithBackupFallback();
+        }
+    }
 
-        Dictionary<string, MediaItem> mediaItemsById = BuildMediaItemsById();
-        Dictionary<string, ShelfSlot> shelvesById = BuildShelvesById();
-
-        ResetSceneMediaToLoose(UnityObject.FindObjectsByType<MediaItem>(FindObjectsInactive.Exclude));
-        ClearShelfOccupancy(shelvesById.Values);
-        HashSet<string> restoredPhysicalIds = new();
-        RestoreLooseItems(saveData.looseMediaItems, mediaItemsById, restoredPhysicalIds);
-        RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById, shelvesById, restoredPhysicalIds);
-        RestorePlayer(saveData.player);
-
-        Debug.Log($"Game loaded: {SavePath}");
+    private static void ReplaceSaveWithBackupFallback()
+    {
+        File.Copy(SavePath, BackupSavePath, true);
+        File.Delete(SavePath);
+        File.Move(TemporarySavePath, SavePath);
     }
 
     private static void EnsureSaveLists(PrototypeSaveData saveData)
@@ -421,5 +640,11 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         public string state = ShelvedState;
         public string shelfSectionId = string.Empty;
         public int shelfOrder = -1;
+    }
+
+    private enum LoadMode
+    {
+        Automatic,
+        Manual
     }
 }

@@ -40,6 +40,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
         IsHeld = true;
         SetShelfVisualMode(false);
 
+        bool removedFromShelf = currentShelfSlot != null;
         currentShelfSlot?.ClearIfHolding(this);
         currentShelfSlot = null;
 
@@ -52,6 +53,11 @@ public sealed class PhysicalInteractable : MonoBehaviour
         transform.SetParent(holdPoint, false);
         transform.localPosition = heldLocalPosition;
         transform.localRotation = Quaternion.Euler(heldLocalEulerAngles);
+
+        if (removedFromShelf)
+        {
+            PrototypeSaveLoadController.NotifyPersistentStateChanged();
+        }
     }
 
     public void Drop()
@@ -73,6 +79,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
         body.angularVelocity = Vector3.zero;
 
         IsHeld = false;
+        PrototypeSaveLoadController.NotifyPersistentStateChanged();
     }
 
     public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot)

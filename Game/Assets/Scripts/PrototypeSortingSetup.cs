@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,13 +39,18 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         new("indie-t-t", "Indie", "T", "T", new Vector3(4.6f, 0f, 3.65f))
     };
 
+    public static event Action SetupCompleted;
+    public static bool HasCompletedSetup { get; private set; }
+
     private void Awake()
     {
+        HasCompletedSetup = false;
         ResolveTemplates();
 
         if (cdTemplate == null || shelfTemplate == null)
         {
             Debug.LogWarning("Prototype sorting setup could not find the CD or shelf template.");
+            MarkSetupCompleted();
             return;
         }
 
@@ -66,6 +72,14 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             GameObject cdInstance = Instantiate(cdTemplate.gameObject);
             ConfigureCd(cdInstance, copies[i], albumDefinitions, shelfSlots);
         }
+
+        MarkSetupCompleted();
+    }
+
+    private static void MarkSetupCompleted()
+    {
+        HasCompletedSetup = true;
+        SetupCompleted?.Invoke();
     }
 
     private void ResolveTemplates()
