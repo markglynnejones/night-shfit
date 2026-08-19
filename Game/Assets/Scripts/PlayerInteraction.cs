@@ -179,4 +179,10 @@ public sealed class PlayerInteraction : MonoBehaviour
             }
         }
     }
+
+    public void ClearHeldItemForPersistence()
+    {
+        heldItem = null;
+        HidePlacementHints();
+    }
 }

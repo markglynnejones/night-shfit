@@ -4,6 +4,7 @@ using UnityEngine;
 
 public sealed class ShelfSlot : MonoBehaviour
 {
+    [SerializeField] private string shelfSectionId = string.Empty;
     [SerializeField] private string acceptedGenre = "Rock";
     [SerializeField] private string artistRangeStart = "A";
     [SerializeField] private string artistRangeEnd = "G";
@@ -18,8 +19,16 @@ public sealed class ShelfSlot : MonoBehaviour
     private readonly List<PhysicalInteractable> placedItems = new();
     private GameObject placementHint;
 
+    public string ShelfSectionId => shelfSectionId;
+
     public void Configure(string genre, string firstArtistInitial, string lastArtistInitial)
     {
+        Configure(string.Empty, genre, firstArtistInitial, lastArtistInitial);
+    }
+
+    public void Configure(string persistentShelfSectionId, string genre, string firstArtistInitial, string lastArtistInitial)
+    {
+        shelfSectionId = persistentShelfSectionId;
         acceptedGenre = genre;
         artistRangeStart = firstArtistInitial;
         artistRangeEnd = lastArtistInitial;
@@ -110,6 +119,30 @@ public sealed class ShelfSlot : MonoBehaviour
         {
             ReflowPlacedItems();
         }
+    }
+
+    public int IndexOf(PhysicalInteractable item)
+    {
+        return placedItems.IndexOf(item);
+    }
+
+    public void ClearPlacedItemsForLoad()
+    {
+        placedItems.Clear();
+        HidePlacementHint();
+    }
+
+    public bool RestorePlacedItem(PhysicalInteractable item)
+    {
+        if (item == null || placedItems.Contains(item) || placedItems.Count >= maxItems)
+        {
+            return false;
+        }
+
+        placedItems.Add(item);
+        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform, this, Vector3.zero, ShelvedEulerAngles);
+        ReflowPlacedItems();
+        return true;
     }
 
     private bool TryGetAcceptedAlbum(PhysicalInteractable item, out AlbumDefinition albumDefinition)

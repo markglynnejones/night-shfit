@@ -33,9 +33,9 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private readonly ShelfSpawn[] shelves =
     {
-        new("Rock", "A", "G", new Vector3(-4.6f, 0f, 3.65f)),
-        new("Rock", "L", "M", new Vector3(0f, 0f, 3.65f)),
-        new("Indie", "T", "T", new Vector3(4.6f, 0f, 3.65f))
+        new("rock-a-g", "Rock", "A", "G", new Vector3(-4.6f, 0f, 3.65f)),
+        new("rock-l-m", "Rock", "L", "M", new Vector3(0f, 0f, 3.65f)),
+        new("indie-t-t", "Indie", "T", "T", new Vector3(4.6f, 0f, 3.65f))
     };
 
     private void Awake()
@@ -148,7 +148,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         if (slot != null)
         {
             slot.name = $"{shelfData.Genre.ToUpperInvariant()} {shelfData.ArtistRangeLabel.ToUpperInvariant()} Placement Slot";
-            slot.Configure(shelfData.Genre, shelfData.ArtistRangeStart, shelfData.ArtistRangeEnd);
+            slot.Configure(shelfData.ShelfId, shelfData.Genre, shelfData.ArtistRangeStart, shelfData.ArtistRangeEnd);
         }
 
         ShelfSectionLabel label = shelf.GetComponent<ShelfSectionLabel>();
@@ -203,14 +203,16 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private readonly struct ShelfSpawn
     {
-        public ShelfSpawn(string genre, string artistRangeStart, string artistRangeEnd, Vector3 position)
+        public ShelfSpawn(string shelfId, string genre, string artistRangeStart, string artistRangeEnd, Vector3 position)
         {
+            ShelfId = shelfId;
             Genre = genre;
             ArtistRangeStart = artistRangeStart;
             ArtistRangeEnd = artistRangeEnd;
             Position = position;
         }
 
+        public string ShelfId { get; }
         public string Genre { get; }
         public string ArtistRangeStart { get; }
         public string ArtistRangeEnd { get; }

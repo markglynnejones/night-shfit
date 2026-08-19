@@ -10,6 +10,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
     private Transform originalParent;
     private ShelfSlot currentShelfSlot;
 
+    public ShelfSlot CurrentShelfSlot => currentShelfSlot;
     public bool IsHeld { get; private set; }
 
     private void Awake()
@@ -114,6 +115,24 @@ public sealed class PhysicalInteractable : MonoBehaviour
         }
 
         transform.localPosition = localOffset;
+    }
+
+    public void RestoreLooseState(Vector3 worldPosition, Quaternion worldRotation)
+    {
+        currentShelfSlot?.ClearIfHolding(this);
+        currentShelfSlot = null;
+        IsHeld = false;
+        SetShelfVisualMode(false);
+
+        Transform currentParent = originalParent != null ? originalParent : null;
+        transform.SetParent(currentParent, true);
+        transform.SetPositionAndRotation(worldPosition, worldRotation);
+
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.useGravity = true;
+        body.isKinematic = false;
+        body.detectCollisions = true;
     }
 
     private void SetShelfVisualMode(bool enabled)

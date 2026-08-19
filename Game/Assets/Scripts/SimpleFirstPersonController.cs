@@ -13,6 +13,10 @@ public sealed class SimpleFirstPersonController : MonoBehaviour
     private float pitch;
     private float verticalVelocity;
 
+    public Vector3 WorldPosition => transform.position;
+    public Quaternion BodyRotation => transform.rotation;
+    public Quaternion CameraLocalRotation => cameraRoot != null ? cameraRoot.localRotation : Quaternion.identity;
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -122,5 +126,34 @@ public sealed class SimpleFirstPersonController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    public void RestorePose(Vector3 worldPosition, Quaternion bodyRotation, Quaternion cameraLocalRotation)
+    {
+        bool wasEnabled = characterController != null && characterController.enabled;
+        if (characterController != null)
+        {
+            characterController.enabled = false;
+        }
+
+        transform.SetPositionAndRotation(worldPosition, bodyRotation);
+
+        if (cameraRoot != null)
+        {
+            cameraRoot.localRotation = cameraLocalRotation;
+            pitch = NormalizePitch(cameraLocalRotation.eulerAngles.x);
+        }
+
+        verticalVelocity = 0f;
+
+        if (characterController != null)
+        {
+            characterController.enabled = wasEnabled;
+        }
+    }
+
+    private static float NormalizePitch(float eulerX)
+    {
+        return eulerX > 180f ? eulerX - 360f : eulerX;
     }
 }
