@@ -324,7 +324,8 @@ def main() -> None:
             and "Vector3.Cross(ray.direction, offset).sqrMagnitude" in player,
             "Shelf interactions must target the visible facing under the centre ray")
     require("firstSolidDistance" in player
-            and "!hit.collider.transform.IsChildOf(targetRoot)" in player,
+            and "hit.collider.transform.IsChildOf(targetRoot)" in player
+            and "QueryTriggerInteraction.Ignore" in player,
             "Aiming must avoid stock behind solid obstructions")
     require("aimedItem = lookedAt;" in player
             and "DrawAimPrompt();" in player
