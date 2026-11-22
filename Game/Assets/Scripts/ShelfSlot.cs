@@ -20,6 +20,44 @@ public sealed class ShelfSlot : MonoBehaviour
     private GameObject placementHint;
 
     public string ShelfSectionId => shelfSectionId;
+    public int ItemCount => placedItems.Count;
+    public string AcceptedGenre => acceptedGenre;
+
+    // Longest ordered subsequence: stock that can remain while wrongly placed stock is removed.
+    // This gives useful incremental progress without requiring an exact hard-coded slot.
+    public int CountCorrectlyOrganisedItems()
+    {
+        int count = placedItems.Count;
+        int[] best = new int[count];
+        int longest = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            AlbumDefinition current = GetAlbum(placedItems[i]);
+            if (!CanAccept(current))
+            {
+                continue;
+            }
+
+            best[i] = 1;
+            for (int j = 0; j < i; j++)
+            {
+                if (best[j] > 0 && CompareAlbumOrder(GetAlbum(placedItems[j]), current) <= 0)
+                {
+                    best[i] = Mathf.Max(best[i], best[j] + 1);
+                }
+            }
+
+            longest = Mathf.Max(longest, best[i]);
+        }
+
+        return longest;
+    }
+
+    public bool IsFullyOrganised()
+    {
+        return CountCorrectlyOrganisedItems() == placedItems.Count;
+    }
 
     public void Configure(string genre, string firstArtistInitial, string lastArtistInitial)
     {
@@ -48,34 +86,28 @@ public sealed class ShelfSlot : MonoBehaviour
             return false;
         }
 
-        if (!TryGetAcceptedAlbum(item, out AlbumDefinition albumDefinition))
+        if (!TryGetKnownAlbum(item, out AlbumDefinition albumDefinition))
         {
-            Debug.Log("That CD does not belong in this shelf slot.");
             return false;
         }
 
-        int insertionIndex = InsertionIndexFor(placementWorldPoint);
-        if (!WouldRemainLogicallyOrdered(item, insertionIndex))
-        {
-            Debug.Log($"That would put {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} out of shelf order.");
-            return false;
-        }
+        // The player may misfile a CD. Correct order is feedback, not a placement rule.
+        PlaceItem(item, InsertionIndexFor(placementWorldPoint));
 
-        PlaceItem(item, insertionIndex);
-
-        Debug.Log($"Placed {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {ArtistRangeLabel()}.");
+        Debug.Log($"Shelved {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {ArtistRangeLabel()}.");
         PrototypeSaveLoadController.NotifyPersistentStateChanged();
         return true;
     }
 
-    public bool TryPlaceStartingItem(PhysicalInteractable item)
+    public bool TryPlaceStartingItem(PhysicalInteractable item, bool deliberatelyMisfiled = false)
     {
-        if (!TryGetAcceptedAlbum(item, out _))
+        if (placedItems.Count >= maxItems || !TryGetKnownAlbum(item, out _))
         {
             return false;
         }
 
-        PlaceItem(item, SortedInsertionIndexFor(item));
+        // Correct reference stock begins in sort order; misplaced items preserve authored chaos.
+        PlaceItem(item, deliberatelyMisfiled ? placedItems.Count : SortedInsertionIndexFor(item));
         return true;
     }
 
@@ -88,7 +120,7 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ShowPlacementHintFor(PhysicalInteractable item, Vector3 placementWorldPoint)
     {
-        if (placedItems.Count >= maxItems || !TryGetAcceptedAlbum(item, out _))
+        if (placedItems.Count >= maxItems || !TryGetKnownAlbum(item, out _))
         {
             HidePlacementHint();
             return;
@@ -146,7 +178,7 @@ public sealed class ShelfSlot : MonoBehaviour
         return true;
     }
 
-    private bool TryGetAcceptedAlbum(PhysicalInteractable item, out AlbumDefinition albumDefinition)
+    private bool TryGetKnownAlbum(PhysicalInteractable item, out AlbumDefinition albumDefinition)
     {
         albumDefinition = null;
         if (item == null || placedItems.Contains(item))
@@ -161,7 +193,7 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         albumDefinition = mediaItem.AlbumDefinition;
-        return CanAccept(albumDefinition);
+        return true;
     }
 
     private void PlaceItem(PhysicalInteractable item, int insertionIndex)
@@ -198,8 +230,8 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         placementHint = new GameObject("Placement Hint");
-        CreateHintCube("Placement Hint Spine", new Vector3(0f, 0f, 0f), new Vector3(0.09f, 0.76f, 0.055f), CreateHintMaterial(new Color(1f, 0.92f, 0.05f, 1f)));
-        CreateHintCube("Placement Hint Top Tab", new Vector3(0f, 0.42f, -0.015f), new Vector3(0.22f, 0.065f, 0.1f), CreateHintMaterial(new Color(0.35f, 1f, 0.45f, 1f)));
+        CreateHintCube("Placement Hint Spine", new Vector3(0f, 0f, 0f), new Vector3(0.09f, 0.76f, 0.055f), CreateHintMaterial(new Color(0.45f, 0.73f, 0.86f, 1f)));
+        CreateHintCube("Placement Hint Top Tab", new Vector3(0f, 0.42f, -0.015f), new Vector3(0.22f, 0.065f, 0.1f), CreateHintMaterial(new Color(0.82f, 0.88f, 0.9f, 1f)));
         placementHint.SetActive(false);
     }
 
@@ -248,24 +280,10 @@ public sealed class ShelfSlot : MonoBehaviour
         return string.Equals(actual, expected, System.StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool WouldRemainLogicallyOrdered(PhysicalInteractable item, int insertionIndex)
+    private static AlbumDefinition GetAlbum(PhysicalInteractable item)
     {
-        List<PhysicalInteractable> candidateOrder = new(placedItems);
-        candidateOrder.Insert(Mathf.Clamp(insertionIndex, 0, candidateOrder.Count), item);
-        return IsLogicallyOrdered(candidateOrder);
-    }
-
-    private static bool IsLogicallyOrdered(IReadOnlyList<PhysicalInteractable> items)
-    {
-        for (int i = 1; i < items.Count; i++)
-        {
-            if (CompareShelfOrder(items[i - 1], items[i]) > 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
+        MediaItem media = item != null ? item.GetComponent<MediaItem>() : null;
+        return media != null ? media.AlbumDefinition : null;
     }
 
     private int InsertionIndexFor(Vector3 placementWorldPoint)

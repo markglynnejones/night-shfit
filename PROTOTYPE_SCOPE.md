@@ -33,6 +33,10 @@ It currently focuses on music and should support:
 - Correct/incorrect placement validation
 - Grouping duplicate copies naturally
 
+## 22 November 2026 implementation checkpoint
+
+The Rock/Indie slice is implemented in the development branch as a **candidate**: 40 album definitions, 140 physical copies, 11 shelving bays, free-form misfiling, deterministic initial disorder, original procedural covers, organisation progress and save/load. This is **not an accepted playable milestone** until the scene runs and the gates in VERTICAL_SLICE_QA.md pass in Unity.
+
 ## Near-Term Vertical Slice
 
 Once the core architecture is stable, build one convincing Rock/Indie section rather than an entire store.

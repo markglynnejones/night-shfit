@@ -15,6 +15,18 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     private void Awake()
     {
+        EnsureBody();
+    }
+
+    // Scene setup may place the original template during another object's Awake,
+    // before Unity has invoked this component's Awake.
+    private void EnsureBody()
+    {
+        if (body != null)
+        {
+            return;
+        }
+
         body = GetComponent<Rigidbody>();
         originalParent = transform.parent;
     }
@@ -32,6 +44,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void PickUp(Transform holdPoint)
     {
+        EnsureBody();
         if (holdPoint == null)
         {
             return;
@@ -62,6 +75,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void Drop()
     {
+        EnsureBody();
         if (!IsHeld)
         {
             return;
@@ -94,6 +108,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot, Vector3 localOffset, Vector3 localEulerAngles)
     {
+        EnsureBody();
         if (snapPoint == null)
         {
             return;
@@ -124,8 +139,26 @@ public sealed class PhysicalInteractable : MonoBehaviour
         transform.localPosition = localOffset;
     }
 
+    // Settled authored piles are stationary until touched; 100+ colliding loose
+    // rigidbodies would otherwise erupt when the prototype scene starts.
+    public void SettleLooseStock()
+    {
+        EnsureBody();
+        if (IsHeld || currentShelfSlot != null)
+        {
+            return;
+        }
+
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.isKinematic = true;
+        body.useGravity = false;
+        body.detectCollisions = true;
+    }
+
     public void RestoreLooseState(Vector3 worldPosition, Quaternion worldRotation)
     {
+        EnsureBody();
         currentShelfSlot?.ClearIfHolding(this);
         currentShelfSlot = null;
         IsHeld = false;
@@ -137,8 +170,9 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
         body.linearVelocity = Vector3.zero;
         body.angularVelocity = Vector3.zero;
-        body.useGravity = true;
-        body.isKinematic = false;
+        // A saved resting transform is authoritative; don't let a stack explode on load.
+        body.useGravity = false;
+        body.isKinematic = true;
         body.detectCollisions = true;
     }
 

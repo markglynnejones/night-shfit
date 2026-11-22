@@ -16,4 +16,15 @@ public sealed class AlbumDefinition : ScriptableObject
     public string Genre => genre;
     public string SortKey => sortKey;
     public Sprite CoverArtwork => coverArtwork;
+
+    // Runtime entries share a definition across all physical copies. The prototype
+    // authoring catalogue is deterministic, so these IDs survive save/reload.
+    public void ConfigureRuntime(string id, string artist, string title, string category)
+    {
+        catalogueId = id;
+        artistName = artist;
+        albumTitle = title;
+        genre = category;
+        sortKey = artist + " / " + title;
+    }
 }

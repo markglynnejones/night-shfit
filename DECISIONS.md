@@ -159,3 +159,11 @@ For tasks touching scenes/assets, Codex should:
 - Summarise changes
 
 Working milestones should be committed before starting substantial new work.
+
+## 2026-11-22 - Free-form misfiling instead of auto-correct
+
+Wrong-genre and wrongly alphabetised CDs must be physically placeable on any shelf with capacity. Validation controls progress feedback, not permission to place the item. Never snap misfiled cases to their correct location automatically. Save/load must restore the exact physical order the player left, including mistakes.
+
+## 2026-11-22 - First Rock/Indie vertical-slice candidate
+
+The first extended playtest uses 40 fictional albums, 140 physical cases and 11 shelf bays. A minority starts correctly sorted, with others misfiled or scattered in intentional piles. Original procedural sleeve art is sufficient for a first playtest. The implementation is a candidate only; Unity compilation, recovery and a 30–60 minute player test remain acceptance gates.
