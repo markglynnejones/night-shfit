@@ -281,6 +281,10 @@ def main() -> None:
             and "private static readonly Dictionary<char, byte[]> Font" in case_art
             and "DrawLine(pixels, artistLines" in case_art,
             "Fictional album covers must include high-contrast legible typography")
+    require("RotateForCaseFrontUV(pixels);" in case_art
+            and "private static void RotateForCaseFrontUV(Color32[] pixels)" in case_art
+            and "pixels[i] = pixels[opposite];" in case_art,
+            "Case-front bitmap must be turned 180 degrees to face the player upright")
     require("four tiny TextMesh children" in case_labels,
             "CD cases should not create thousands of overlapping 3D labels")
     require("int columns = Screen.width >= 540 ? 2 : 1;" in player
