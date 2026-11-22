@@ -9,7 +9,7 @@ public sealed class PlayerInteraction : MonoBehaviour
     [SerializeField] private LayerMask interactionLayers = Physics.DefaultRaycastLayers;
 
     private PhysicalInteractable heldItem;
-    private readonly RaycastHit[] hits = new RaycastHit[8];
+    private readonly RaycastHit[] hits = new RaycastHit[64];
     private ShelfSlot[] shelfSlots = new ShelfSlot[0];
 
     private void Awake()

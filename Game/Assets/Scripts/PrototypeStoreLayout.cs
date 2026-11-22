@@ -13,10 +13,12 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
     {
         CreateMaterials();
         AdjustExistingDisplayTable();
+        RemoveOldMovementMarker();
         CreateCheckoutCounter();
         CreateStaffDoor();
         CreateClosedEntrance();
         CreateMusicDepartmentDetails();
+        CreatePostSaleAtmosphere();
     }
 
     private void CreateMaterials()
@@ -27,6 +29,15 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         signageMaterial = CreateMaterial("Prototype Signage Off White", new Color(0.86f, 0.84f, 0.78f));
         shutterMaterial = CreateMaterial("Prototype Shutter Blue Grey", new Color(0.28f, 0.34f, 0.39f));
         doorMaterial = CreateMaterial("Prototype Staff Door", new Color(0.38f, 0.43f, 0.42f));
+    }
+
+    private static void RemoveOldMovementMarker()
+    {
+        GameObject marker = GameObject.Find("Movement Reference Block");
+        if (marker != null)
+        {
+            marker.SetActive(false);
+        }
     }
 
     private void AdjustExistingDisplayTable()
@@ -71,12 +82,48 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
     private void CreateMusicDepartmentDetails()
     {
-        CreateCube("Music Department Header", new Vector3(0f, 2.35f, 4.15f), new Vector3(5.9f, 0.22f, 0.06f), signageMaterial);
+        CreateCube("Music Department Header", new Vector3(0f, 2.35f, 4.15f), new Vector3(12f, 0.22f, 0.06f), signageMaterial);
         CreateText("Music Department Label", "MUSIC", new Vector3(0f, 2.38f, 4.08f), 0.06f);
 
         CreateCube("Low Browser Bin Left", new Vector3(-4.55f, 0.46f, 1.25f), new Vector3(1.25f, 0.32f, 0.9f), fixtureMaterial);
         CreateCube("Low Browser Bin Right", new Vector3(4.45f, 0.46f, 0.85f), new Vector3(1.25f, 0.32f, 0.9f), fixtureMaterial);
-        CreateCube("Aisle End Cap", new Vector3(-5.8f, 0.95f, 3.0f), new Vector3(0.65f, 1.1f, 0.8f), fixtureMaterial);
+        // The old aisle end cap obstructed the new left-wall browsing bays.
+    }
+
+    private void CreatePostSaleAtmosphere()
+    {
+        Material saleRed = CreateMaterial("Faded Sale Red", new Color(0.71f, 0.22f, 0.19f));
+        Material midnight = CreateMaterial("Night Shift Midnight", new Color(0.08f, 0.16f, 0.22f));
+        Material gold = CreateMaterial("Warm Retail Gold", new Color(0.83f, 0.69f, 0.36f));
+
+        // In-universe fictional shop identity and aftermath of a huge music sale.
+        CreateCube("Shop Name Header", new Vector3(0f, 2.6f, -4.72f),
+            new Vector3(4.5f, 0.36f, 0.07f), midnight);
+        CreateText("Shop Identity", "SIDE B RECORDS", new Vector3(0f, 2.62f, -4.78f),
+            0.047f, Quaternion.Euler(0f, 180f, 0f));
+
+        CreateCube("Front Sale Poster Left", new Vector3(-4.9f, 1.8f, -4.82f),
+            new Vector3(1.6f, 1.15f, 0.05f), saleRed);
+        CreateText("Sale Poster Left Text", "FINAL SALE", new Vector3(-4.9f, 1.82f, -4.86f),
+            0.035f, Quaternion.Euler(0f, 180f, 0f));
+
+        CreateCube("Front Sale Poster Right", new Vector3(4.9f, 1.8f, -4.82f),
+            new Vector3(1.6f, 1.15f, 0.05f), gold);
+        CreateText("Sale Poster Right Text", "ALL STOCK
+MUST GO", new Vector3(4.9f, 1.82f, -4.86f),
+            0.028f, Quaternion.Euler(0f, 180f, 0f));
+
+        CreateCube("Rock Department Strip", new Vector3(-2.38f, 2.1f, 4.07f),
+            new Vector3(5.7f, 0.15f, 0.035f), saleRed);
+        CreateCube("Indie Department Strip", new Vector3(3.7f, 2.1f, 4.07f),
+            new Vector3(3.9f, 0.15f, 0.035f), midnight);
+
+        CreateCube("Faded Checkout Sign", new Vector3(4.65f, 1.48f, -3.08f),
+            new Vector3(1.55f, 0.22f, 0.04f), saleRed);
+        CreateText("Checkout Returns Message", "RETURNS / EXCHANGES",
+            new Vector3(4.65f, 1.48f, -3.12f), 0.017f);
+
+        RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.62f);
     }
 
     private GameObject CreateCube(string name, Vector3 position, Vector3 scale, Material material)
