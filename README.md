@@ -53,3 +53,11 @@ To deliberately begin with fresh shop chaos, quit Play mode and move both saved 
 The repository contains Unity-free source/data tests, and an in-Editor runtime validator. Source tests cannot establish actual Unity compilation, performance or rendered appearance. This 1,388-case candidate requires a local 15-30 minute player and frame-rate test before the next category is added.
 
 No timed shifts, XP economy or shop-management systems are part of this prototype.
+
+## Improved CD browsing and inspection (follow-up)
+
+Physical CD cases remain their realistic size. The bottom-right focus card now shows a **large version of the actual album cover** alongside the artist, album and genre. While carrying one or more CDs, this card stays on the **selected case**, rather than changing unexpectedly when the crosshair passes over a shelf. Hold **Q** to inspect the album in a much larger temporary view. When pointing at an unheld CD, Q inspects the target without picking it up.
+
+A narrow aim-assist target helps with tiny jewel cases; if the front case is obscured by a browse-bin lip, the player can still select it through the rack's existing non-colliding aim region. A populated rack can now report how many physical cases occupy the browsed column. Empty-handed mouse-wheel flipping, ten-CD carrying, wrong-genre shelving and version-2 saves are unchanged.
+
+The cover in the on-screen UI is taken from the existing **shared 256px texture** per album, corrected for the case mesh's 180-degree UV orientation. The preview does not create new textures for each individual stock copy.
