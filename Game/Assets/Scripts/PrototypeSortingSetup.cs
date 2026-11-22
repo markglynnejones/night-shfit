@@ -54,12 +54,12 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         new("rock-i-m", "Rock", "I", "M", 0f, 3.65f, 0f),
         new("rock-n-s", "Rock", "N", "S", 2.39f, 3.65f, 0f),
         new("rock-t-z", "Rock", "T", "Z", 4.78f, 3.65f, 0f),
-        new("indie-a-d", "Indie", "A", "D", -6.1f, -3.4f, -90f),
-        new("indie-e-h", "Indie", "E", "H", -6.1f, -1.05f, -90f),
-        new("indie-i-m", "Indie", "I", "M", -6.1f, 1.3f, -90f),
-        new("indie-n-r", "Indie", "N", "R", -6.1f, 3.65f, -90f),
-        new("indie-s-v", "Indie", "S", "V", 6.1f, 0.45f, 90f),
-        new("indie-w-z", "Indie", "W", "Z", 6.1f, 2.85f, 90f)
+        new("indie-a-d", "Indie", "A", "D", -6.4f, -3.4f, -90f),
+        new("indie-e-h", "Indie", "E", "H", -6.4f, -1.05f, -90f),
+        new("indie-i-m", "Indie", "I", "M", -6.4f, 1.3f, -90f),
+        new("indie-n-r", "Indie", "N", "R", -6.4f, 3.65f, -90f),
+        new("indie-s-v", "Indie", "S", "V", 6.4f, 0.45f, 90f),
+        new("indie-w-z", "Indie", "W", "Z", 6.4f, 2.85f, 90f)
     };
 
     // Surface heights include half the thickness of a CD lying face-up.
