@@ -309,6 +309,13 @@ def main() -> None:
             "Holding Q must show cover art in the correct screen-space orientation")
     require("PhysicalInteractable shown = selected != null ? selected : lookedAt;" in player,
             "Selected album details must remain stable when aiming at other stock")
+    require("out Vector3 wheelRackHitPoint" in player
+            and "rack.FlipCoverAt(wheelRackHitPoint" in player,
+            "Wheel hit variable must not shadow another out-local in Update")
+    update_body = player.split("private void Update()", 1)[1].split(
+        "private void SelectRelative(", 1)[0]
+    require(update_body.count("out Vector3 point") == 1,
+            "Overlapping out-local 'point' declarations cause Unity C# CS0136")
     require("Q inspect" in hud,
             "The contextual inspection key must be documented in the HUD")
 

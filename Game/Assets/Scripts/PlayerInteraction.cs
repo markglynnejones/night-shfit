@@ -77,9 +77,9 @@ public sealed class PlayerInteraction : MonoBehaviour
                 }
                 else if (carriedItems.Count == 0
                     && TryFindLookedAtShelfSlot(out ShelfSlot rack,
-                        out Vector3 point))
+                        out Vector3 wheelRackHitPoint))
                 {
-                    rack.FlipCoverAt(point, wheel < 0f);
+                    rack.FlipCoverAt(wheelRackHitPoint, wheel < 0f);
                 }
             }
         }
