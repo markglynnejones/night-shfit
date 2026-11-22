@@ -1,116 +1,53 @@
-# Rock / Indie vertical-slice acceptance
+# Night Shift: seven-row browsing pass QA
 
-**Status:** candidate ready for Unity playtesting; acceptance pending.
+This is a code/content candidate awaiting a Unity 6000.5.8f1 playtest.
 
-Run in Unity **6000.5.8f1**, scene **Assets/Scenes/Prototype.unity**.
+## Scene and performance
 
-## Gate A — Editor/scene and catalogue
+- [ ] Play enters with no C# errors or missing scripts.
+- [ ] Night Shift > Validate Running Vertical Slice reports 248 unique album definitions, 1,388 physical copies and eleven unique rack IDs with capacity 252 each.
+- [ ] Record scene startup time and average/lowest frame rate in the Game view.
+- [ ] Move along all 11 racks and inspect crowded tiers for movement stutter.
+- [ ] Leave running at least two minutes and verify autosave does not visibly freeze the game.
 
-- [ ] Unity imports with **zero C# compiler errors**.
-- [ ] No missing-script warnings in the scene.
-- [ ] Choose **Night Shift > Validate Running Vertical Slice** in Play mode. It should pass 40 albums, 140 CDs and 11 unique shelves.
-- [ ] Confirm no duplicate physical IDs, missing definitions or errors during scene startup.
-- [ ] All shelving is reachable; no colliders trap the player or leave CDs inaccessible.
-- [ ] Cover artwork and spine labels are visibly distinct/readable close up.
+## Seven-row racks / four-deep piles
 
-## Gate B — Actual free-form sorting
+- [ ] Seven visible sloping CD browsing rows per rack, each wide enough for nine front covers.
+- [ ] Up to four independent CDs can occupy each facing, with distinct IDs.
+- [ ] When not carrying stock, aim at a stack and use the mouse wheel to bring the next copy to the front. The change persists after P/O.
+- [ ] E can pick the front copy; deeper copies remain accessible.
+- [ ] Empty slots remain reachable, and E/Shift+E insert only the selected carried CD.
+- [ ] Wrong-genre and wrong-alphabetical-order cases remain placeable; no magical auto-sort.
+- [ ] There is no clipping through rear panels, divider tabs or neighbouring artwork.
+- [ ] The trigger volume does not physically block the player or a picked-up case.
 
-- [ ] Look at a CD and press **E** to pick it up; look away from a shelf and press **E** to drop it.
-- [ ] Place a Rock CD in an Indie shelf and confirm placement succeeds.
-- [ ] Place a correct-genre CD ahead of an alphabetically earlier artist; confirm placement succeeds.
-- [ ] Remove and replace a CD between two others; visible order remains as the player chose.
-- [ ] Put duplicate copies together, then confirm the progress feedback can improve.
-- [ ] A full shelf refuses on capacity grounds, not because of its category or alphabet.
-- [ ] Dense shelves can still be aimed at; individual CDs can be removed.
+## Carried stack and visual readability
 
-## Gate C — Persistence and recovery
+- [ ] Collect ten cases. All ten appear at once in a two-column top-right list.
+- [ ] The tenth selected item and the bottom-right selected album information remain entirely visible.
+- [ ] Long titles ellipsise cleanly rather than spilling off the panel.
+- [ ] Scrolling with a carried stack changes the selected CD, not the rack contents.
+- [ ] The album sleeves show distinct original artwork, with readable high-contrast artist/title bands; no stacked-on-top 3D letters.
+- [ ] Rock and Indie signs fit inside their burgundy/teal header panels.
+- [ ] Separate progress and control panels have no collisions with the carry/album panels in normal and maximised Game views.
 
-- [ ] Organise 15–30 items; intentionally leave several in wrong genres and wrong alphabetical positions.
-- [ ] Press **P** and **O**; correct, wrong and loose states return exactly as saved.
-- [ ] In WebGL, press P to save, then refresh the webpage and verify persistence; **F5 refreshes browsers**.
-- [ ] Quit Play mode and restart; the same shop resumes, not regenerated disorder.
-- [ ] Pick up a shelved case, move and drop it, allow autosave, then reload.
-- [ ] Leave the game idle two minutes; periodic autosave must not disrupt it.
-- [ ] Test a corrupt main save with valid .bak (using temporary copies) for recovery.
-- [ ] Preserve valued older v1 saves separately (see README).
+## Shop fixtures and atmosphere
 
-## Gate D — 30–60-minute real player test
+- [ ] Central display table has four visible legs and lower storage rather than floating.
+- [ ] Low loose-stock bins are supported by solid floor-reaching bases.
+- [ ] Lighting is warmer and avoids deep, unreadable shadows.
+- [ ] Floor skirting, small sale tags and ceiling fixtures look like a retail interior, not distracting floating polygons.
 
-Record at least one timed **30–60-minute** session.
+## Save migration and the real organising loop
 
-| Metric | Observation |
-| --- | --- |
-| Time before first satisfying sorting action | |
-| CDs successfully organised | |
-| Accidental drops/misfiles due to controls | |
-| Trouble selecting piles or shelf insertion | |
-| Moments of learning/recognising albums | |
-| Progress feedback felt motivating? | |
-| Visible transformation was meaningful? | |
-| Frame rate / hitches | |
-| Would play another 30 minutes? | |
+- [ ] Back up the old save files BEFORE first testing this major content expansion.
+- [ ] Opening a former 140-CD version-2 save retains all 140 original IDs and the player's existing organised/misfiled placements.
+- [ ] 1,248 new expanded-* copies appear without resetting the old world.
+- [ ] P then O reloads exactly 1,388 physical IDs with no duplicates or missing shelf references.
+- [ ] The ten-CD hand stack, selected index and four-deep flip order persist between sessions.
+- [ ] A fresh shop has 228 reference copies, 892 wrongly shelved cases, and 268 loose cases.
+- [ ] Picking up from a deep row, grouping duplicates and dropping stock still feels like the good original physics.
 
-**Acceptance:** the organising loop remains enjoyable, transforms the shop and persists between sessions. Counts alone do not prove the milestone.
+## Acceptance
 
-## Known limitations to assess
-
-- Authored loose piles are kinematic until picked up, avoiding a huge initial physics collision.
-- Covers are original procedural pattern art, not final illustrated album jackets.
-- Progress is calculated using an ordered subsequence of correctly filed cases, not a hard-coded exact slot per copy.
-- The shop remains a prototype-scale layout. Controller support and advanced grab controls are later scope.
-- Old v1 save files are not migrated.
-- There is no Unity CI runner configured; compile, scene and playtest gates must run locally.
-
-Fix critical failures and repeat the test **before** scaling to more music or other media.
-
-## Scale and readability follow-up (first five-minute feedback)
-
-- [ ] A physical CD should be approximately **17.2 cm by 13.6 cm** rather than the original 78 cm by 62 cm.
-- [ ] Player eye starts at **about 1.65 m** above floor; walk into the room and confirm no floating start or excessively tall viewpoint.
-- [ ] The table, browse bins and loose floor stacks sit on their surfaces without visible floating or intersections; cases in a pile are about 2 cm apart vertically.
-- [ ] Shelf rows hold small CDs closely, with a narrow, neutral placement marker rather than an oversized highlighted slot.
-- [ ] Rock shelving uses burgundy signs and Indie shelving uses muted petrol/teal signs, with legible cream lettering.
-- [ ] Room walls and floor have a warmer, calmer material palette, with less harsh lighting.
-- [ ] Aim at a small CD: a bottom-right card identifies its genre, artist and album title, and shows **E to pick up**. Pick it up and check **E to place/drop**.
-- [ ] Verify an incorrectly filed CD can still be placed and saved; check your existing progress still loads.
-- [ ] With a saved v2 shop from before the scale pass, confirm loose cases are automatically resettled on supports, while shelf IDs/order remain intact. Keep a backup before testing.
-- [ ] Play for 5–10 minutes and note any cases now too fiddly to pick up, shelf gaps, or unreadable signs.
-
-If the new dimensions are too small to target reliably, adjust the interaction affordance or spacing rather than reverting to giant physical CDs.
-
-
-## Flip-through browsing rack visual acceptance
-
-Photo reference: real UK high-street music store CD flip bins (roughly mid-2000s): inclined tiers of front covers, narrow retaining lips, section dividers and large genre signs. These are NOT oversized upright bookcases.
-
-- [ ] Each of the 11 stock bays looks like a shallow waist-height browsing bin with three visible rows, not a tall empty display cabinet
-- [ ] A CD is nearly real jewel-case size (17.2 × 13.6 cm) and displays its FRONT COVER tilted towards the customer, not an edge-on spine
-- [ ] Nine cases fit across a row and three staggered rows are available: 27 physical copies per section
-- [ ] Rock uses a burgundy sign, Indie uses petrol/teal, and alphabet ranges remain visible beside each sign
-- [ ] Front lips and divider tabs imply real record-store browsing racks, without blocking art or obscuring the interaction target
-- [ ] The player can pick up one case in a visually crowded bin (aim at its face and press E), move it, and put it between two others
-- [ ] An intentionally wrong genre/artist placement succeeds, remains in player-authored order and survives P/O save and reload
-- [ ] The shelving target is a non-colliding trigger, so the player does not bump into invisible interaction boxes
-- [ ] When starting with a fresh save, there are 20 correctly filed cases, 60 intentionally misfiled cases, and 60 loose cases. Existing saves are intentionally NOT reset.
-- [ ] Check a 5–10 minute playtest for cases that clip through trays, rows that overlap the main sign, too-small album covers or interaction difficulty
-
-**Known limitation:** this is a first geometry/layout pass with procedurally coloured sleeves. The reference photo is a visual target for shelving construction, not a licensed texture asset to reproduce.
-
-
-## Carry stack acceptance (ten physical CDs)
-
-- [ ] While empty-handed, aim at a CD and press E. Carry counter becomes 1/10 and that artist/title is displayed.
-- [ ] Aim at nine other CDs and press E on each. Counter increases to 10/10, all ten remain individual items, and they are physically fanned in hand.
-- [ ] Aimed at an eleventh CD, E does NOT acquire an 11th item; no item is lost or duplicated.
-- [ ] Scroll mouse wheel in both directions. Selected index wraps around both ends. Large album panel and highlighted stack row track the correct album.
-- [ ] Aim at an empty part of a rack, press E. Exactly the selected case is shelved; count goes from 10 to 9. Other carried cases retain their relative order.
-- [ ] Aim at an existing CD on a rack; Shift+E shelves the selected carried case without accidentally collecting the case already in the rack.
-- [ ] A full shelf refuses the selected CD. The CD remains in hand.
-- [ ] G drops exactly the selected physical CD, still with its normal Rigidbody physics; the remaining stack stays carried.
-- [ ] From a mixture of correctly shelved, misfiled and loose stock, pick up 10 cases. P saves them; O reloads with the same 10 IDs, order and selected index.
-- [ ] Repeat the previous test by stopping/restarting Play mode (quit-save should preserve carried IDs).
-- [ ] An existing v2 save created before this feature still loads without carry-state exceptions.
-- [ ] Collect, scroll and shelve while walking. Other cases must not clip through the camera or block the interaction raycast.
-- [ ] At a short Game window height, the stack list and current-album details are readable and don't obscure the central aim dot.
-
-Static GitHub checks cannot verify Rigidbody or UI input. Please test these in Unity before accepting the milestone.
+Play for 15-30 minutes and report frame-rate issues, interaction frustrations, whether the shop feels stocked without overwhelming the player, legibility, and any clipping. Fix critical bugs before adding DVDs or games. Static GitHub checks do not replace this player test.

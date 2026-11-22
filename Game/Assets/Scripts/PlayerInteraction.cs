@@ -59,17 +59,23 @@ public sealed class PlayerInteraction : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         Mouse mouse = Mouse.current;
 
-        if (carriedItems.Count > 1 && mouse != null
-            && Cursor.lockState == CursorLockMode.Locked)
+        // With CDs in hand, wheel cycles the ten-item carrying stack.
+        // Empty-handed, it flips through the four-deep column at the cursor.
+        if (mouse != null && Cursor.lockState == CursorLockMode.Locked)
         {
             float wheel = mouse.scroll.ReadValue().y;
-            if (wheel > 0.01f)
+            if (Mathf.Abs(wheel) > 0.01f)
             {
-                SelectRelative(-1);
-            }
-            else if (wheel < -0.01f)
-            {
-                SelectRelative(1);
+                if (carriedItems.Count > 1)
+                {
+                    SelectRelative(wheel > 0f ? -1 : 1);
+                }
+                else if (carriedItems.Count == 0
+                    && TryFindLookedAtShelfSlot(out ShelfSlot rack,
+                        out Vector3 point))
+                {
+                    rack.FlipCoverAt(point, wheel < 0f);
+                }
             }
         }
 
@@ -391,42 +397,73 @@ public sealed class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        float x = Mathf.Max(8f, Screen.width - 390f);
+        float width = Mathf.Min(470f, Screen.width * 0.48f);
+        float x = Mathf.Max(8f, Screen.width - width - 12f);
         float y = Mathf.Max(8f, Screen.height - 142f);
-        DrawPanel(new Rect(x, y, 378f, 128f),
-            new Color(0.07f, 0.13f, 0.16f, 0.94f));
+        DrawPanel(new Rect(x, y, width, 128f),
+            new Color(0.07f, 0.13f, 0.16f, 0.96f));
 
-        GUI.Label(new Rect(x + 14f, y + 9f, 350f, 22f),
+        float textWidth = width - 26f;
+        GUI.Label(new Rect(x + 14f, y + 9f, textWidth, 22f),
             album.Genre.ToUpperInvariant(), albumDetailStyle);
-        GUI.Label(new Rect(x + 14f, y + 32f, 350f, 28f),
-            album.ArtistName, albumArtistStyle);
-        GUI.Label(new Rect(x + 14f, y + 61f, 350f, 25f),
-            album.AlbumTitle, albumTitleStyle);
+        GUI.Label(new Rect(x + 14f, y + 31f, textWidth, 28f),
+            FitText(album.ArtistName, albumArtistStyle, textWidth),
+            albumArtistStyle);
+        GUI.Label(new Rect(x + 14f, y + 59f, textWidth, 29f),
+            FitText(album.AlbumTitle, albumTitleStyle, textWidth),
+            albumTitleStyle);
 
         bool showingPickupTarget = !carriedItems.Contains(
             focusedMedia.GetComponent<PhysicalInteractable>());
         string hint = showingPickupTarget
-            ? "E  ADD TO STACK (" + carriedItems.Count + "/10)"
+            ? carriedItems.Count == 0
+                ? "E  COLLECT CD   •   WHEEL  FLIP RACK COPIES"
+                : "E  COLLECT CD  (" + carriedItems.Count + "/10)"
             : "E  SHELVE   •   G  DROP   •   WHEEL  SELECT";
-        GUI.Label(new Rect(x + 14f, y + 99f, 351f, 20f),
-            hint, albumDetailStyle);
+        GUI.Label(new Rect(x + 14f, y + 99f, textWidth, 22f),
+            FitText(hint, albumDetailStyle, textWidth), albumDetailStyle);
     }
 
     private void DrawStackPanel()
     {
-        float width = 378f;
-        float x = Mathf.Max(8f, Screen.width - width - 12f);
-        float y = 14f;
-        float height = 44f + carriedItems.Count * 16f;
-        DrawPanel(new Rect(x, y, width, height),
-            new Color(0.08f, 0.13f, 0.15f, 0.95f));
+        // Two columns of five fit a short Unity Game viewport. One long list
+        // used to cut off the selected tenth item and long album titles.
+        int columns = Screen.width >= 540 ? 2 : 1;
+        float width = Mathf.Min(490f, Mathf.Max(280f, Screen.width * 0.49f));
+        float x = Mathf.Max(6f, Screen.width - width - 12f);
+        int rows = Mathf.CeilToInt(carriedItems.Count / (float)columns);
+        bool compact = Screen.height < 360f;
+        float rowHeight = compact ? 23f : columns == 2 ? 39f : 28f;
+        float height = 43f + rows * rowHeight;
+        float y = 12f;
 
-        GUI.Label(new Rect(x + 12f, y + 8f, width - 24f, 24f),
-            "CARRYING " + carriedItems.Count + " / " + MaxCarryItems
-            + "   •   SCROLL TO SELECT", albumDetailStyle);
+        // Don't obscure the bottom-right album inspection card.
+        height = Mathf.Min(height, Mathf.Max(70f, Screen.height - 151f));
+        DrawPanel(new Rect(x, y, width, height),
+            new Color(0.07f, 0.13f, 0.16f, 0.97f));
+
+        GUI.Label(new Rect(x + 12f, y + 7f, width - 24f, 26f),
+            "CARRYING  " + carriedItems.Count + " / " + MaxCarryItems
+            + "   •   WHEEL TO CHOOSE", albumDetailStyle);
+
+        float margin = 10f;
+        float columnWidth = (width - margin * 2f - (columns - 1) * 6f)
+            / columns;
 
         for (int i = 0; i < carriedItems.Count; i++)
         {
+            int rowIndex = i / columns;
+            int columnIndex = i % columns;
+            float rowY = y + 36f + rowIndex * rowHeight;
+            float colX = x + margin + columnIndex * (columnWidth + 6f);
+
+            if (rowY + rowHeight > y + height + 0.5f)
+            {
+                // On very small Game windows, entries remain accessible by
+                // wheel and are always readable in the full album card below.
+                break;
+            }
+
             MediaItem media = carriedItems[i] != null
                 ? carriedItems[i].GetComponent<MediaItem>() : null;
             AlbumDefinition album = media != null ? media.AlbumDefinition : null;
@@ -435,18 +472,59 @@ public sealed class PlayerInteraction : MonoBehaviour
                 continue;
             }
 
-            float rowY = y + 32f + i * 16f;
             if (i == selectedIndex)
             {
-                DrawPanel(new Rect(x + 7f, rowY, width - 14f, 16f),
-                    new Color(0.25f, 0.40f, 0.41f, 0.9f));
+                DrawPanel(new Rect(colX, rowY, columnWidth,
+                    rowHeight - 2f), new Color(0.25f, 0.43f, 0.43f, 0.95f));
             }
 
-            string title = album.ArtistName + "  •  " + album.AlbumTitle;
-            GUI.Label(new Rect(x + 15f, rowY, width - 30f, 16f),
-                (i == selectedIndex ? "▶ " : "   ") + (i + 1) + ". " + title,
-                i == selectedIndex ? stackSelectedStyle : stackEntryStyle);
+            float textWidth = columnWidth - 14f;
+            GUIStyle artistStyle = i == selectedIndex
+                ? stackSelectedStyle : stackEntryStyle;
+            string artist = (i + 1) + ". " + album.ArtistName;
+
+            GUI.Label(new Rect(colX + 7f, rowY + 1f, textWidth, 19f),
+                FitText(artist, artistStyle, textWidth), artistStyle);
+
+            if (columns == 2 && !compact)
+            {
+                GUI.Label(new Rect(colX + 7f, rowY + 20f, textWidth, 18f),
+                    FitText(album.AlbumTitle, stackEntryStyle, textWidth),
+                    stackEntryStyle);
+            }
         }
+    }
+
+    private static string FitText(string content, GUIStyle style, float availableWidth)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return string.Empty;
+        }
+
+        if (style.CalcSize(new GUIContent(content)).x <= availableWidth)
+        {
+            return content;
+        }
+
+        const string ellipsis = "…";
+        int lower = 0;
+        int upper = content.Length;
+        while (lower < upper)
+        {
+            int middle = (lower + upper + 1) / 2;
+            string candidate = content.Substring(0, middle) + ellipsis;
+            if (style.CalcSize(new GUIContent(candidate)).x <= availableWidth)
+            {
+                lower = middle;
+            }
+            else
+            {
+                upper = middle - 1;
+            }
+        }
+
+        return content.Substring(0, lower) + ellipsis;
     }
 
     private static void DrawPanel(Rect rect, Color color)
@@ -479,14 +557,14 @@ public sealed class PlayerInteraction : MonoBehaviour
         };
         albumDetailStyle = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 13,
+            fontSize = 15,
             fontStyle = FontStyle.Bold,
             clipping = TextClipping.Clip,
             normal = { textColor = new Color(0.82f, 0.88f, 0.86f) }
         };
         stackEntryStyle = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 12,
+            fontSize = 13,
             clipping = TextClipping.Clip,
             normal = { textColor = new Color(0.80f, 0.84f, 0.84f) }
         };

@@ -21,6 +21,7 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         CreateMaterials();
         ApplyExistingRoomMaterials();
         AdjustExistingDisplayTable();
+        FinishDisplayFurniture();
         RemoveOldMovementMarker();
         CreateCheckoutCounter();
         CreateStaffDoor();
@@ -28,6 +29,7 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         CreateMusicDepartmentDetails();
         CreatePostSaleAtmosphere();
         TuneLighting();
+        CreateShopAccents();
     }
 
     private void CreateMaterials()
@@ -82,6 +84,27 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         displayTable.transform.localScale = new Vector3(1.7f, 0.14f, 0.9f);
     }
 
+    private void FinishDisplayFurniture()
+    {
+        // Visible structural supports: previously the display surfaces floated.
+        const float legY = 0.37f;
+        foreach (float x in new[] { -0.74f, 0.74f })
+        {
+            foreach (float z in new[] { 0.31f, 1.00f })
+            {
+                CreateCube("Display Table Leg", new Vector3(x, legY, z),
+                    new Vector3(0.105f, 0.74f, 0.105f), counterMaterial);
+            }
+        }
+
+        CreateCube("Display Table Lower Shelf",
+            new Vector3(0f, 0.19f, 0.65f),
+            new Vector3(1.56f, 0.06f, 0.83f), fixtureMaterial);
+        CreateCube("Display Table Edge",
+            new Vector3(0f, 0.84f, 0.20f),
+            new Vector3(1.70f, 0.035f, 0.04f), counterMaterial);
+    }
+
     private void CreateCheckoutCounter()
     {
         CreateCube("Checkout Counter Base", new Vector3(4.65f, 0.42f, -2.65f), new Vector3(1.9f, 0.84f, 0.7f), counterMaterial);
@@ -113,11 +136,19 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
     private void CreateMusicDepartmentDetails()
     {
         CreateCube("Music Department Header", new Vector3(0f, 2.35f, 4.15f), new Vector3(12f, 0.22f, 0.06f), signageMaterial);
-        CreateText("Music Department Label", "MUSIC", new Vector3(0f, 2.38f, 4.08f), 0.06f);
+        CreateText("Music Department Label", "RECORDS  •  CD", new Vector3(0f, 2.38f, 4.08f), 0.025f);
 
         CreateCube("Low Browser Bin Left", new Vector3(-4.55f, 0.46f, 1.25f), new Vector3(1.25f, 0.32f, 0.9f), fixtureMaterial);
         CreateCube("Low Browser Bin Right", new Vector3(4.45f, 0.46f, 0.85f), new Vector3(1.25f, 0.32f, 0.9f), fixtureMaterial);
-        // The old aisle end cap obstructed the new left-wall browsing bays.
+        // Both loose-stock tables now have proper bodies instead of hovering.
+        CreateCube("Left Browser Bin Base", new Vector3(-4.55f, 0.22f, 1.25f),
+            new Vector3(1.12f, 0.44f, 0.78f), counterMaterial);
+        CreateCube("Right Browser Bin Base", new Vector3(4.45f, 0.22f, 0.85f),
+            new Vector3(1.12f, 0.44f, 0.78f), counterMaterial);
+        CreateCube("Left Browser Bin Lip", new Vector3(-4.55f, 0.64f, 0.82f),
+            new Vector3(1.24f, 0.075f, 0.055f), counterMaterial);
+        CreateCube("Right Browser Bin Lip", new Vector3(4.45f, 0.64f, 0.42f),
+            new Vector3(1.24f, 0.075f, 0.055f), counterMaterial);
     }
 
     private void CreatePostSaleAtmosphere()
@@ -130,12 +161,12 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         CreateCube("Shop Name Header", new Vector3(0f, 2.6f, -4.72f),
             new Vector3(4.5f, 0.36f, 0.07f), midnight);
         CreateText("Shop Identity", "SIDE B RECORDS", new Vector3(0f, 2.62f, -4.78f),
-            0.047f, Quaternion.Euler(0f, 180f, 0f), Color.white);
+            0.033f, Quaternion.Euler(0f, 180f, 0f), Color.white);
 
         CreateCube("Front Sale Poster Left", new Vector3(-4.9f, 1.8f, -4.82f),
             new Vector3(1.6f, 1.15f, 0.05f), saleRed);
         CreateText("Sale Poster Left Text", "FINAL SALE", new Vector3(-4.9f, 1.82f, -4.86f),
-            0.035f, Quaternion.Euler(0f, 180f, 0f), Color.white);
+            0.024f, Quaternion.Euler(0f, 180f, 0f), Color.white);
 
         CreateCube("Front Sale Poster Right", new Vector3(4.9f, 1.8f, -4.82f),
             new Vector3(1.6f, 1.15f, 0.05f), gold);
@@ -155,26 +186,84 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         // Lighting is tuned separately so the warm palette has predictable contrast.
     }
 
+    private void CreateShopAccents()
+    {
+        // The greybox had an open sky, making even finished shelves look
+        // like exterior props. A non-shadow-casting ceiling closes the room
+        // while the URP directional and warm overhead lighting stay usable.
+        GameObject ceiling = CreateCube("Retail Shop Ceiling",
+            new Vector3(0f, 3.27f, 0f),
+            new Vector3(14f, 0.12f, 10.1f), signageMaterial);
+        MeshRenderer ceilingRenderer = ceiling.GetComponent<MeshRenderer>();
+        if (ceilingRenderer != null)
+        {
+            ceilingRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        Collider ceilingCollider = ceiling.GetComponent<Collider>();
+        if (ceilingCollider != null)
+        {
+            ceilingCollider.enabled = false;
+        }
+
+        Material charcoal = CreateMaterial("Charcoal Wall Trim",
+            new Color(0.24f, 0.25f, 0.26f));
+        Material agedPaper = CreateMaterial("Aged Ticket Paper",
+            new Color(0.86f, 0.81f, 0.69f));
+
+        // A few restrained retail fixtures help the floor feel like an actual
+        // post-sale high-street record shop rather than a flat prototype room.
+        CreateCube("Back Wall Skirting", new Vector3(0f, 0.09f, 4.84f),
+            new Vector3(13.7f, 0.18f, 0.07f), charcoal);
+        CreateCube("Entrance Skirting Left", new Vector3(-4.55f, 0.09f, -4.83f),
+            new Vector3(4.3f, 0.18f, 0.07f), charcoal);
+        CreateCube("Entrance Skirting Right", new Vector3(4.55f, 0.09f, -4.83f),
+            new Vector3(4.3f, 0.18f, 0.07f), charcoal);
+
+        CreateCube("Store Discount Ticket", new Vector3(-1.10f, 0.86f, 0.29f),
+            new Vector3(0.28f, 0.018f, 0.20f), agedPaper);
+        CreateCube("Returns Ticket", new Vector3(4.64f, 0.936f, -2.40f),
+            new Vector3(0.23f, 0.015f, 0.14f), agedPaper);
+
+        // Two broad diffuse ceiling lights, no extra shadow-casting lights.
+        for (int i = 0; i < 2; i++)
+        {
+            float z = i == 0 ? -1.6f : 2.0f;
+            CreateCube("Ceiling Light Diffuser " + (i + 1),
+                new Vector3(0f, 3.14f, z),
+                new Vector3(3.0f, 0.04f, 0.23f), signageMaterial);
+
+            GameObject lightObject = new GameObject("Warm Overhead Light " + (i + 1));
+            lightObject.transform.position = new Vector3(0f, 2.85f, z);
+            Light light = lightObject.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.range = 8f;
+            light.intensity = 0.35f;
+            light.shadows = LightShadows.None;
+            light.color = new Color(1f, 0.94f, 0.81f);
+        }
+    }
+
     private static void TuneLighting()
     {
         GameObject sunObject = GameObject.Find("Directional Light");
         Light mainLight = sunObject != null ? sunObject.GetComponent<Light>() : null;
         if (mainLight != null)
         {
-            mainLight.intensity = 1.2f;
+            mainLight.intensity = 1.0f;
+            mainLight.shadowStrength = 0.43f;
             mainLight.color = new Color(1f, 0.92f, 0.81f);
             mainLight.shadows = LightShadows.Soft;
         }
 
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.57f, 0.54f, 0.49f);
+        RenderSettings.ambientLight = new Color(0.69f, 0.67f, 0.61f);
     }
 
-    // Keep the slot collider/snap transform intact. Only the oversized fixture
-    // meshes and visible signs shrink: this preserves existing shelf IDs and saves.
-    // Build shallow, waist-height CD flip-bins. This preserves the original
-    // ShelfSlot, snap transform and persistent section ID, but replaces the
-    // greybox bookcase silhouette with a familiar early-2000s music-shop rack.
+    // Seven browsable rows, four deep at each cover. Real CD-store tiers
+    // have a shallow rise towards the back, retaining lips, and bold but
+    // compact alphabet dividers. Persistent shelf IDs are never changed.
     public static void StyleShelf(Transform shelf, string genre)
     {
         if (shelf == null)
@@ -184,74 +273,71 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
         if (shelfFrameMaterial == null)
         {
-            shelfFrameMaterial = CreateMaterial("Flip-Bin Dark Metal Frame",
-                new Color(0.23f, 0.25f, 0.26f));
-            shelfBackMaterial = CreateMaterial("Flip-Bin Charcoal Deck",
-                new Color(0.14f, 0.16f, 0.17f));
-            rockHeaderMaterial = CreateMaterial("Rock and Pop Burgundy Header",
-                new Color(0.55f, 0.18f, 0.30f));
-            indieHeaderMaterial = CreateMaterial("Indie Petrol Header",
-                new Color(0.13f, 0.37f, 0.40f));
-            shelfRangeMaterial = CreateMaterial("Divider Matte Slate",
-                new Color(0.31f, 0.35f, 0.36f));
+            shelfFrameMaterial = CreateMaterial("Powder Coated Dark Frame",
+                new Color(0.25f, 0.27f, 0.29f));
+            shelfBackMaterial = CreateMaterial("Dark Vinyl Browsing Decks",
+                new Color(0.16f, 0.18f, 0.20f));
+            rockHeaderMaterial = CreateMaterial("Rock Burgundy",
+                new Color(0.57f, 0.21f, 0.34f));
+            indieHeaderMaterial = CreateMaterial("Indie Petrol",
+                new Color(0.13f, 0.42f, 0.43f));
+            shelfRangeMaterial = CreateMaterial("Alphabet Divider Slate",
+                new Color(0.34f, 0.38f, 0.39f));
         }
 
-        bool isIndie = string.Equals(genre, "Indie",
-            System.StringComparison.OrdinalIgnoreCase);
-        Material header = isIndie ? indieHeaderMaterial : rockHeaderMaterial;
+        Material department = string.Equals(genre, "Indie",
+            System.StringComparison.OrdinalIgnoreCase)
+            ? indieHeaderMaterial : rockHeaderMaterial;
 
-        // Reuse the scene's model parts rather than layering a new rack on top.
-        StylePart(shelf, "Shelf Back", new Vector3(0f, 0.48f, 0.36f),
-            new Vector3(2.13f, 0.92f, 0.065f), shelfBackMaterial);
-        StylePart(shelf, "Shelf Board", new Vector3(0f, 0.74f, -0.03f),
-            new Vector3(2.12f, 0.07f, 0.84f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Top", new Vector3(0f, 1.53f, 0.36f),
-            new Vector3(2.14f, 0.035f, 0.065f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Left Side", new Vector3(-1.08f, 1.05f, -0.03f),
-            new Vector3(0.05f, 0.65f, 0.86f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Right Side", new Vector3(1.08f, 1.05f, -0.03f),
-            new Vector3(0.05f, 0.65f, 0.86f), shelfFrameMaterial);
+        // Reuse and resize the original primitives. The old bookcase silhouette
+        // must disappear entirely, rather than sitting behind the new trays.
+        StylePart(shelf, "Shelf Back", new Vector3(0f, 0.83f, 0.43f),
+            new Vector3(2.13f, 1.48f, 0.055f), shelfBackMaterial);
+        StylePart(shelf, "Shelf Board", new Vector3(0f, 0.72f, -0.08f),
+            new Vector3(2.12f, 0.06f, 1.02f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Top", new Vector3(0f, 1.81f, 0.37f),
+            new Vector3(2.12f, 0.038f, 0.12f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Left Side", new Vector3(-1.08f, 1.19f, -0.045f),
+            new Vector3(0.045f, 1.14f, 1.20f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Right Side", new Vector3(1.08f, 1.19f, -0.045f),
+            new Vector3(0.045f, 1.14f, 1.20f), shelfFrameMaterial);
+        StylePart(shelf, "ROCK Shelf Sign Panel", new Vector3(0f, 1.66f, 0.397f),
+            new Vector3(2.05f, 0.22f, 0.026f), department);
+        StylePart(shelf, "B Shelf Sign Panel", new Vector3(0.73f, 1.66f, 0.364f),
+            new Vector3(0.37f, 0.175f, 0.027f), shelfRangeMaterial);
 
-        // A high-contrast header and alphabet tab, like the photo reference.
-        StylePart(shelf, "ROCK Shelf Sign Panel", new Vector3(0f, 1.38f, 0.31f),
-            new Vector3(2.04f, 0.245f, 0.025f), header);
-        StylePart(shelf, "B Shelf Sign Panel", new Vector3(0.69f, 1.38f, 0.282f),
-            new Vector3(0.42f, 0.195f, 0.025f), shelfRangeMaterial);
-
-        // Three stepped decks expose the actual front covers. Six physical
-        // cases sit across each deck; shallow rails and index tabs suggest the
-        // CD browsing troughs used in real high-street music shops.
-        for (int tier = 0; tier < 3; tier++)
+        for (int row = 0; row < ShelfSlot.TierCount; row++)
         {
-            float y = 0.79f + tier * 0.10f;
-            float z = -0.30f + tier * 0.24f;
+            float y = 0.735f + row * 0.085f;
+            float z = -0.47f + row * 0.130f;
 
-            CreateRackPart(shelf, "Browsing Deck " + (tier + 1),
-                new Vector3(0f, y, z),
-                new Vector3(2.07f, 0.043f, 0.235f), shelfBackMaterial);
-            CreateRackPart(shelf, "Browsing Front Lip " + (tier + 1),
-                new Vector3(0f, y + 0.028f, z - 0.124f),
-                new Vector3(2.07f, 0.049f, 0.025f), shelfFrameMaterial);
+            CreateRackPart(shelf, "Browsing Deck " + (row + 1),
+                new Vector3(0f, y, z + 0.028f),
+                new Vector3(2.06f, 0.032f, 0.134f), shelfBackMaterial);
+            CreateRackPart(shelf, "Browsing Lip " + (row + 1),
+                new Vector3(0f, y + 0.040f, z - 0.063f),
+                new Vector3(2.06f, 0.042f, 0.020f), shelfFrameMaterial);
 
-            // Each small tab marks a divider rather than behaving like a CD.
+            // Small aisle markers, not giant geometric fins hiding the covers.
             for (int divider = 0; divider < 2; divider++)
             {
-                float x = divider == 0 ? -0.60f : 0.285f;
-                CreateRackPart(shelf, "Index Divider " + (tier + 1) + "-" + (divider + 1),
-                    new Vector3(x, y + 0.09f, z + 0.038f),
-                    new Vector3(0.027f, 0.19f, 0.082f), header);
+                float x = divider == 0 ? -0.43f : 0.43f;
+                CreateRackPart(shelf, "Genre Divider " + row + "-" + divider,
+                    new Vector3(x, y + 0.115f, z + 0.093f),
+                    new Vector3(0.018f, 0.050f, 0.045f), department);
             }
         }
 
-        CreateRackPart(shelf, "Browsing Bin Plinth",
-            new Vector3(0f, 0.34f, -0.02f),
-            new Vector3(2.07f, 0.64f, 0.78f), shelfFrameMaterial);
-        CreateRackPart(shelf, "Browsing Bin Front Panel",
-            new Vector3(0f, 0.47f, -0.425f),
-            new Vector3(2.07f, 0.58f, 0.045f), shelfBackMaterial);
+        CreateRackPart(shelf, "Closed Plinth",
+            new Vector3(0f, 0.33f, -0.07f),
+            new Vector3(2.06f, 0.65f, 1.07f), shelfFrameMaterial);
+        CreateRackPart(shelf, "Front Kick Panel",
+            new Vector3(0f, 0.45f, -0.615f),
+            new Vector3(2.06f, 0.56f, 0.035f), shelfBackMaterial);
+        CreateRackPart(shelf, "Front Price Rail",
+            new Vector3(0f, 0.715f, -0.628f),
+            new Vector3(2.06f, 0.038f, 0.027f), department);
 
-        // Snap stays a direct child of the shelf, with absolute in-rack
-        // offsets computed by ShelfSlot.LocalOffsetForIndex. No saved IDs move.
         Transform snap = shelf.Find("ROCK A-G CD Snap Point");
         if (snap != null)
         {
@@ -263,24 +349,20 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         ShelfSlot slot = shelf.GetComponentInChildren<ShelfSlot>();
         if (slot != null)
         {
-            slot.transform.localPosition = new Vector3(0f, 1.04f, -0.06f);
+            slot.transform.localPosition = new Vector3(0f, 1.145f, -0.054f);
             slot.transform.localRotation = Quaternion.identity;
-            slot.transform.localScale = new Vector3(2.02f, 0.57f, 0.75f);
-            Collider placementVolume = slot.GetComponent<Collider>();
-            if (placementVolume != null)
+            slot.transform.localScale = new Vector3(2.01f, 0.91f, 1.17f);
+
+            Collider volume = slot.GetComponent<Collider>();
+            if (volume != null)
             {
-                // A trigger is aimable by the shelving raycast, but won't trap
-                // the player or collide with kinematic CDs inside the rack.
-                placementVolume.isTrigger = true;
+                volume.isTrigger = true;
             }
 
-            // A large but invisible placement hit volume makes realistic-size
-            // cases easy to put down; the cases themselves remain individually
-            // pickable, with their own colliders.
-            MeshRenderer slotVisual = slot.GetComponent<MeshRenderer>();
-            if (slotVisual != null)
+            MeshRenderer visual = slot.GetComponent<MeshRenderer>();
+            if (visual != null)
             {
-                slotVisual.enabled = false;
+                visual.enabled = false;
             }
         }
     }

@@ -25,6 +25,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
     private bool hasCompletedStartupLoad;
     private bool isLoading;
     private bool hasDirtyChanges;
+    private bool expandedStockPendingSave;
     private float nextAutosaveTime;
     private float nextPeriodicAutosaveTime;
 
@@ -142,7 +143,12 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
 
         LoadGame(LoadMode.Automatic);
         hasCompletedStartupLoad = true;
-        hasDirtyChanges = false;
+        hasDirtyChanges = expandedStockPendingSave;
+        if (expandedStockPendingSave)
+        {
+            nextAutosaveTime = Time.unscaledTime + Mathf.Max(2f, autosaveDebounceSeconds);
+        }
+
         nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
     }
 
@@ -247,6 +253,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             string json = JsonUtility.ToJson(saveData, true);
             SafeWriteSaveFile(json);
             hasDirtyChanges = false;
+            expandedStockPendingSave = false;
             nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
             Debug.Log($"Game saved ({reason}): {SavePath}");
         }
@@ -289,11 +296,25 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             HashSet<string> restoredPhysicalIds = new();
             RestoreLooseItems(saveData.looseMediaItems, mediaItemsById, restoredPhysicalIds);
             RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById, shelvesById, restoredPhysicalIds);
+
+            // Existing v2 saves may contain only the original 140 slice IDs.
+            // Append new catalogue stock without changing those IDs, shelf
+            // positions, physical order, or any carried selected cases.
+            int expanded = PrototypeSortingSetup.RestoreMissingExpansionStock(
+                restoredPhysicalIds, mediaItemsById, shelvesById);
+            expandedStockPendingSave = expanded > 0;
+            if (expanded > 0)
+            {
+                Debug.Log("Kept your existing save and added " + expanded
+                    + " newly introduced stock items.");
+            }
+
             RestorePlayer(saveData.player);
             RestoreCarriedItems(saveData.carriedPhysicalIds,
                 saveData.selectedCarriedIndex, mediaItemsById, restoredPhysicalIds);
 
-            hasDirtyChanges = false;
+            hasDirtyChanges = expandedStockPendingSave;
+            nextAutosaveTime = Time.unscaledTime + Mathf.Max(2f, autosaveDebounceSeconds);
             nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
             Debug.Log($"Game loaded: {SavePath}");
         }

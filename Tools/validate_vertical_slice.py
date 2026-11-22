@@ -28,6 +28,9 @@ def main() -> None:
     player = (SCRIPTS / "PlayerInteraction.cs").read_text(encoding="utf-8")
     physical = (SCRIPTS / "PhysicalInteractable.cs").read_text(encoding="utf-8")
     hud = (SCRIPTS / "PrototypeOrganisationHud.cs").read_text(encoding="utf-8")
+    case_art = (SCRIPTS / "AlbumCoverArt.cs").read_text(encoding="utf-8")
+    case_labels = (SCRIPTS / "AlbumCaseLabel.cs").read_text(encoding="utf-8")
+    validator = (ROOT / "Game" / "Assets" / "Editor" / "VerticalSliceValidator.cs").read_text(encoding="utf-8")
 
     # Pull only literal seed constructors out of the two purpose-built blocks.
     album_block = setup.split("AdditionalAlbums =", 1)[1].split("private static readonly ShelfSeed", 1)[0]
@@ -91,7 +94,7 @@ def main() -> None:
                     shelves[( (misplaced - 1) * 3 + offset) % len(shelves)]
                     for offset in range(len(shelves))
                     if not accepts(shelves[((misplaced - 1) * 3 + offset) % len(shelves)], album)
-                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 27
+                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 252
                 ), None)
                 require(destination is not None, f"No misfile shelf space for {album[0]}")
                 occupancy[destination[0]] += 1
@@ -100,7 +103,84 @@ def main() -> None:
     require(total == 140, f"Expected 140 physical cases, got {total}")
     require(reference == 20 and misplaced == 60 and loose == 60,
             f"Unexpected start split: {reference}/{misplaced}/{loose}")
-    require(max(occupancy.values()) <= 27, "Starting shelf is over capacity")
+    require(max(occupancy.values()) <= 252, "Original slice over capacity")
+
+    # The expansion deliberately happens AFTER the original 40/140 are seeded:
+    # old physical IDs slice-0001..0140 must still refer to identical copies.
+    def word_array(name: str) -> list[str]:
+        match = re.search(
+            r"Expansion" + name + r"\s*=\s*\{(.*?)\};", setup, re.S
+        )
+        require(match is not None, "Expansion catalogue missing " + name)
+        return re.findall(r'"([^"]+)"', match.group(1))
+
+    prefixes = word_array("ArtistPrefixes")
+    endings = word_array("ArtistEndings")
+    adjectives = word_array("AlbumAdjectives")
+    nouns = word_array("AlbumNouns")
+    require(len(prefixes) == 26 and len(endings) == 2,
+            "Expanded artist catalogue should contain two artists per letter")
+    require(len(adjectives) == 16 and len(nouns) == 16,
+            "Expanded album naming vocabulary changed unexpectedly")
+    require({prefix[0] for prefix in prefixes} == set("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+            "Expanded catalogue needs all artist initials A-Z")
+
+    expanded = []
+    for p, prefix in enumerate(prefixes):
+        for e, ending in enumerate(endings):
+            for variant in range(4):
+                adj = adjectives[(p * 3 + e * 5 + variant * 7) % len(adjectives)]
+                noun = nouns[(p * 5 + e * 11 + variant * 9) % len(nouns)]
+                title = adj + " " + noun
+                artist = prefix + " " + ending
+                genre = "Rock" if (p + e + variant) % 2 == 0 else "Indie"
+                identity = f"exp-release-{p:02d}-{e}-{variant}"
+                expanded.append((identity, artist, title, genre))
+    require(len(expanded) == 208 and len(set(x[0] for x in expanded)) == 208,
+            "Expanded catalogue should contain 208 unique albums")
+    require(len(entries) + len(expanded) == 248,
+            "Expected exactly 248 total fictional albums")
+
+    extra_reference = extra_misfiled = extra_loose = ordinal = 0
+    for album in expanded:
+        matches = [shelf for shelf in shelves if accepts(shelf, album)]
+        require(matches, f"Expanded album missing a home: {album}")
+        for _ in range(6):
+            ordinal += 1
+            if ordinal % 6 == 0:
+                extra_loose += 1
+            elif ordinal % 5 == 0:
+                home = matches[0]
+                require(occupancy[home[0]] < 252,
+                        f"Full home shelf {home[0]}")
+                occupancy[home[0]] += 1
+                extra_reference += 1
+            else:
+                target = next((
+                    shelves[(ordinal * 3 + offset) % len(shelves)]
+                    for offset in range(len(shelves))
+                    if not accepts(shelves[(ordinal * 3 + offset) % len(shelves)], album)
+                    and occupancy[shelves[(ordinal * 3 + offset) % len(shelves)][0]] < 252
+                ), None)
+                require(target is not None, "Expanded misfiled stock has no room")
+                occupancy[target[0]] += 1
+                extra_misfiled += 1
+
+    require(ordinal == 1248 and
+            (extra_reference, extra_misfiled, extra_loose) == (208, 832, 208),
+            "Unexpected extended stock distribution")
+    require(total + ordinal == 1388, "Expected 1388 physical copies")
+    require(max(occupancy.values()) <= 252, "Expanded shelf over capacity")
+    require(sum(occupancy.values()) == 1120,
+            "Expected 1120 starting shelved copies in a fresh game")
+    require("RestoreMissingExpansionStock(" in setup
+            and "RestoreMissingExpansionStock(" in save,
+            "Old saves must gain new stock without resetting original CDs")
+    require("string id = \"expanded-\"" in setup,
+            "New stock must have a separate persistent ID range")
+    require("expandedStockPendingSave" in save,
+            "Newly migrated stock must be saved automatically")
+
 
     # Visual proportions are coupled: changing case scale without retuning piles
     # or shelf spacing would leave the room full of floating, oversized gaps.
@@ -114,7 +194,7 @@ def main() -> None:
     require("PrototypeStoreLayout.StyleShelf(shelf, seed.Genre);" in setup,
             "Shelves are not restyled")
     require("public static void StyleShelf" in layout
-            and "slotVisual.enabled = false;" in layout,
+            and "visual.enabled = false;" in layout,
             "Oversized visible shelf slot is still in the scene")
     require("focusedMedia" in player and "album.ArtistName" in player,
             "Readable catalogue interaction prompt is missing")
@@ -151,8 +231,8 @@ def main() -> None:
     require("RestoreCarriedItems(saveData.carriedPhysicalIds," in save
             and "saveData.carriedPhysicalIds ??= new List<string>();" in save,
             "Carried selection is not restored or old saves are incompatible")
-    require("Wheel: choose CD" in hud and "G: drop CD" in hud,
-            "Controls help does not describe the new stack")
+    require("Wheel  browse" in hud and "G  drop" in hud,
+            "Controls help does not describe the browse/carry actions")
     require("private const int SaveFormatVersion = 2;" in save,
             "Do not break existing v2 saves to add the carry stack")
 
@@ -161,23 +241,53 @@ def main() -> None:
     require("RestoreShelvedItems(" in save and "RestoreLooseItems(" in save,
             "Save load lacks stock restoration")
     require("TryGetKnownAlbum" in shelf, "Shelf placement must allow the wrong genre")
-    require("CoversPerTier = 9" in shelf and "TierCount = 3" in shelf,
-            "CD racks no longer use nine-by-three browsing tiers")
+    require("CoversPerTier = 9" in shelf
+            and "TierCount = 7" in shelf and "MaxDepth = 4" in shelf,
+            "CD racks must have seven nine-wide rows and four-deep physical stacks")
+    require("FacesPerLayer = CoversPerTier * TierCount" in shelf,
+            "Physical column/depth slot count is inconsistent")
+    require("maxItems = FacesPerLayer * MaxDepth;" in shelf,
+            "Browse racks do not use 252 independent physical item positions")
+    require("FlipCoverAt(" in shelf and "rack.FlipCoverAt(" in player,
+            "The player cannot flip through the four-deep browse stacks")
     require("new(28f, 0f, 0f)" in shelf, "CD faces no longer tilt towards shoppers")
     require('CreateRackPart(shelf, "Browsing Deck "' in layout,
             "CD browsing deck geometry was not built")
-    require("placementVolume.isTrigger = true" in layout,
+    require("volume.isTrigger = true" in layout,
             "Browse tray placement volume must not collide with players")
     require("QueryTriggerInteraction.Collide" in player,
             "Shelving raycast must be able to see tray triggers")
-    require("slot.transform.localScale = new Vector3(2.02f, 0.57f, 0.75f)" in layout,
+    require("slot.transform.localScale = new Vector3(2.01f, 0.91f, 1.17f)" in layout,
             "The bin placement area is missing")
-    require("new Vector3(-0.35f, 1.38f, 0.268f)" in
+    require("new Vector3(-0.26f, 1.66f, 0.375f)" in
             (SCRIPTS / "ShelfSectionLabel.cs").read_text(encoding="utf-8"),
             "Flip-bin genre sign is no longer on the upright header")
     require("WouldRemainLogicallyOrdered" not in shelf,
             "Incorrectly ordered stock is still being blocked")
     require("CountCorrectlyOrganisedItems()" in shelf, "Progress feedback missing")
+    require("List<AlbumDefinition> tails = new();" in shelf,
+            "Progress calculation should remain O(n log n) at store-scale")
+    require("FinishDisplayFurniture()" in layout and "CreateShopAccents()" in layout,
+            "Store furniture and atmosphere pass is missing")
+    require('CreateCube("Retail Shop Ceiling"' in layout
+            and "ShadowCastingMode.Off" in layout,
+            "The shop ceiling must close the old open-sky greybox without blocking light")
+    require('CreateCube("Display Table Lower Shelf"' in layout
+            and 'CreateCube("Left Browser Bin Base"' in layout,
+            "The original floating furniture still lacks physical supports")
+    require("CreateRackPart(shelf, \"Browsing Deck \"" in layout,
+            "All seven retail browse decks must be constructed")
+    require("TextureFormat.RGBA32" in case_art
+            and "private static readonly Dictionary<char, byte[]> Font" in case_art
+            and "DrawLine(pixels, artistLines" in case_art,
+            "Fictional album covers must include high-contrast legible typography")
+    require("four tiny TextMesh children" in case_labels,
+            "CD cases should not create thousands of overlapping 3D labels")
+    require("int columns = Screen.width >= 540 ? 2 : 1;" in player
+            and "FitText(" in player,
+            "Ten-carried-CD panel must wrap to two short columns and avoid clipping")
+    require("stock.Length != 1388" in validator and "shelf.Capacity != 252" in validator,
+            "Unity Editor validator must check the expanded shop")
 
     for basename in ("PrototypeSortingSetup", "PrototypeStoreLayout"):
         meta = (SCRIPTS / f"{basename}.cs.meta").read_text(encoding="utf-8")
@@ -187,13 +297,16 @@ def main() -> None:
     require("Assets/Scenes/Prototype.unity" in build_settings and "enabled: 1" in build_settings,
             "Prototype not included in build scenes")
 
-    print(f"PASS: {len(entries)} catalogue titles, {total} stock copies, "
-          f"{len(shelves)} valid bays; {reference} reference, "
-          f"{misplaced} misfiled, {loose} loose.")
+    print(f"PASS: {len(entries) + len(expanded)} catalogue titles, "
+          f"{total + ordinal} stock copies, {len(shelves)} shelf bays.")
+    print(f"PASS: legacy 140 physical IDs retained; "
+          f"{reference + extra_reference} reference, "
+          f"{misplaced + extra_misfiled} misfiled, "
+          f"{loose + extra_loose} loose. Max bay: {max(occupancy.values())}/252.")
     print("PASS: Save/load contracts, scene wiring and permissive shelving signatures.")
     print("PASS: CD proportions, pile/shelf geometry, room contrast, readable inspect prompt and save upgrade contracts.")
-    print("PASS: Three-tier face-out racks, marker/trigger setup, dividers and 80 initially shelved cases.")
-    print("PASS: Ten-case carry limit, wheel selection, selective shelving/drop, and persistent carry IDs.")
+    print("PASS: Seven-row, four-deep racks, 1120 shelved cases, nonblocking placement targets.")
+    print("PASS: Ten-CD two-column UI, wheel selection and in-rack flipping, legible art, furniture and save migration.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
