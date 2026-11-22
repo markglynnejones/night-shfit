@@ -26,7 +26,8 @@ Run in Unity **6000.5.8f1**, scene **Assets/Scenes/Prototype.unity**.
 ## Gate C — Persistence and recovery
 
 - [ ] Organise 15–30 items; intentionally leave several in wrong genres and wrong alphabetical positions.
-- [ ] Press **F5** and **F9**; correct, wrong and loose states return exactly as saved.
+- [ ] Press **P** and **O**; correct, wrong and loose states return exactly as saved.
+- [ ] In WebGL, press P to save, then refresh the webpage and verify persistence; **F5 refreshes browsers**.
 - [ ] Quit Play mode and restart; the same shop resumes, not regenerated disorder.
 - [ ] Pick up a shelved case, move and drop it, allow autosave, then reload.
 - [ ] Leave the game idle two minutes; periodic autosave must not disrupt it.

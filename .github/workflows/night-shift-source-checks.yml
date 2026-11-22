@@ -1,0 +1,31 @@
+name: Night Shift source checks
+
+on:
+  pull_request:
+    paths:
+      - 'Game/**'
+      - 'Tools/**'
+      - '.github/workflows/night-shift-source-checks.yml'
+  push:
+    branches:
+      - feature/rock-indie-vertical-slice
+    paths:
+      - 'Game/**'
+      - 'Tools/**'
+      - '.github/workflows/night-shift-source-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-data:
+    name: Validate vertical-slice data without Unity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate authored stock, shelving and scene wiring
+        run: python Tools/validate_vertical_slice.py
