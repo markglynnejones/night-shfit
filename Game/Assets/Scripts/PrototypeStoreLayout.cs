@@ -188,6 +188,25 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
     private void CreateShopAccents()
     {
+        // The greybox had an open sky, making even finished shelves look
+        // like exterior props. A non-shadow-casting ceiling closes the room
+        // while the URP directional and warm overhead lighting stay usable.
+        GameObject ceiling = CreateCube("Retail Shop Ceiling",
+            new Vector3(0f, 3.27f, 0f),
+            new Vector3(14f, 0.12f, 10.1f), signageMaterial);
+        MeshRenderer ceilingRenderer = ceiling.GetComponent<MeshRenderer>();
+        if (ceilingRenderer != null)
+        {
+            ceilingRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        Collider ceilingCollider = ceiling.GetComponent<Collider>();
+        if (ceilingCollider != null)
+        {
+            ceilingCollider.enabled = false;
+        }
+
         Material charcoal = CreateMaterial("Charcoal Wall Trim",
             new Color(0.24f, 0.25f, 0.26f));
         Material agedPaper = CreateMaterial("Aged Ticket Paper",
