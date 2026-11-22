@@ -349,6 +349,44 @@ public sealed class ShelfSlot : MonoBehaviour
         return Mathf.Min(tier * CoversPerTier + column, placedItems.Count);
     }
 
+    // Let the interaction UI identify the front-facing CD and show how
+    // many distinct physical copies are behind that cover. This read-only
+    // query never alters the authored ordering or persistent state.
+    public bool TryGetFrontCaseAt(Vector3 worldPoint,
+        out PhysicalInteractable front, out int countInColumn)
+    {
+        front = null;
+        countInColumn = 0;
+
+        Transform reference = snapPoint != null ? snapPoint : transform;
+        Vector3 local = reference.InverseTransformPoint(worldPoint);
+        int column = Mathf.Clamp(
+            Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
+            0, CoversPerTier - 1);
+        int tier = Mathf.Clamp(
+            Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
+            0, TierCount - 1);
+        int face = tier * CoversPerTier + column;
+
+        if (face >= placedItems.Count)
+        {
+            return false;
+        }
+
+        front = placedItems[face];
+        for (int depth = 0; depth < MaxDepth; depth++)
+        {
+            if (face + depth * FacesPerLayer >= placedItems.Count)
+            {
+                break;
+            }
+
+            countInColumn++;
+        }
+
+        return front != null;
+    }
+
     // Browse an individual four-deep column when empty-handed. Rotating the
     // visible first case to the back changes only that column and persists.
     // The face is always determined from the same aim location as insertion.
