@@ -357,17 +357,10 @@ Tasks that modify Unity scenes should end with:
 > - Do not add unrelated features.
 > - Summarise files changed and any architectural decisions made.
 
-## Immediate Next Engineering Task
+## Current checkpoint: 22 November 2026
 
-After this documentation rebaseline, Codex should inspect the existing project for shift/clock-out/completion concepts left over from the earlier prototype direction.
+The development branch feature/rock-indie-vertical-slice is now a first-pass **40-album, 140-copy, 11-shelf Rock/Indie vertical-slice candidate**. This includes free-form misfiling, persistent shelf order, stable item IDs, authored disorder, original procedural album sleeves, progress feedback, signage and Unity Editor inventory validation.
 
-Remove or disable only those concepts while preserving:
+The source-level structural checks pass, but the Unity Editor has not been run here. **Do not mark Phase 3 complete until Unity compilation, save recovery and an actual 30–60 minute playtest pass.**
 
-- Player movement
-- Pickup/drop
-- Media definitions
-- Duplicate physical stock
-- Shelf validation
-- Dense shelf behaviour
-
-After that cleanup, stop and design the exact music shelving/sorting rules before adding more content.
+Immediate next gate: follow VERTICAL_SLICE_QA.md in Unity 6000.5.8f1, address blockers and record the playtest result. **Do not scale the catalogue until this gate passes.**
