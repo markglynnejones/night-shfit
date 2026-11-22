@@ -13,7 +13,7 @@ public sealed class ShelfSlot : MonoBehaviour
     [SerializeField] private int maxItems = 18;
 
     private static readonly Vector3 ShelvedEulerAngles = new(0f, -90f, 0f);
-    private const float ShelfDepthOffset = 0.38f;
+    private const float ShelfDepthOffset = 0.34f;
     private const float HintFrontZ = -0.12f;
 
     // Small physical cases should sit close together, not 11 cm apart.

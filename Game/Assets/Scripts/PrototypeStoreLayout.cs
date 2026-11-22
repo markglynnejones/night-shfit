@@ -166,6 +166,7 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
             mainLight.shadows = LightShadows.Soft;
         }
 
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.57f, 0.54f, 0.49f);
     }
 
