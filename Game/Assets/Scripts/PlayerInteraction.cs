@@ -19,6 +19,8 @@ public sealed class PlayerInteraction : MonoBehaviour
     private ShelfSlot[] shelfSlots = new ShelfSlot[0];
     private MediaItem focusedMedia;
     private MediaItem inspectedMedia;
+    private PhysicalInteractable aimedItem;
+    private ShelfSlot aimedShelf;
     private int hoveredColumnCount;
     private GUIStyle inspectHeaderStyle;
     private GUIStyle inspectArtistStyle;
@@ -90,6 +92,9 @@ public sealed class PlayerInteraction : MonoBehaviour
         }
 
         PhysicalInteractable lookedAt = FindLookedAtInteractable();
+        aimedItem = lookedAt;
+        aimedShelf = TryFindLookedAtShelfSlot(out ShelfSlot visibleRack,
+            out _) ? visibleRack : null;
         PhysicalInteractable selected = SelectedItem;
 
         // Stable focus while carrying: the card describes the SELECTED CD,
@@ -246,6 +251,14 @@ public sealed class PlayerInteraction : MonoBehaviour
         PrototypeSaveLoadController.NotifyPersistentStateChanged();
     }
 
+    private Ray CentreScreenRay()
+    {
+        // Always use the camera's true optical centre, matching the dot drawn
+        // at Screen.width / 2 and Screen.height / 2. This also handles camera
+        // lens shift and aspect settings correctly.
+        return playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+    }
+
     private PhysicalInteractable FindLookedAtInteractable()
     {
         if (playerCamera == null)
@@ -253,72 +266,68 @@ public sealed class PlayerInteraction : MonoBehaviour
             return null;
         }
 
-        Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
+        Ray ray = CentreScreenRay();
         int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange,
             interactionLayers, QueryTriggerInteraction.Ignore);
 
-        PhysicalInteractable closest = null;
-        float closestDistance = float.MaxValue;
+        // The first *solid* hit controls interaction. Do not look through
+        // furniture or another case to select an album further away.
+        PhysicalInteractable direct = null;
+        float firstSolidDistance = interactionRange;
         for (int i = 0; i < hitCount; i++)
         {
-            RaycastHit hit = hits[i];
-            PhysicalInteractable candidate =
-                hit.collider.GetComponentInParent<PhysicalInteractable>();
-            if (candidate == null || candidate.IsHeld || hit.distance >= closestDistance)
+            if (hits[i].distance >= firstSolidDistance)
             {
                 continue;
             }
 
-            closest = candidate;
-            closestDistance = hit.distance;
+            firstSolidDistance = hits[i].distance;
+            PhysicalInteractable candidate =
+                hits[i].collider.GetComponentInParent<PhysicalInteractable>();
+            direct = candidate != null && !candidate.IsHeld ? candidate : null;
         }
 
-        if (closest != null)
+        if (direct != null)
         {
-            return closest;
+            return direct;
         }
 
-        // Tiny real-sized cases need forgiving aim. Only use a narrow sphere
-        // assist when there was no direct CD hit, and never reach through
-        // opaque geometry that the straight crosshair ray hit first.
-        float blockingDistance = interactionRange;
-        for (int i = 0; i < hitCount; i++)
-        {
-            RaycastHit hit = hits[i];
-            if (hit.collider.GetComponentInParent<PhysicalInteractable>() == null)
-            {
-                blockingDistance = Mathf.Min(blockingDistance, hit.distance + 0.04f);
-            }
-        }
-
-        int nearbyHits = Physics.SphereCastNonAlloc(ray, 0.045f, hits,
-            Mathf.Min(interactionRange, blockingDistance), interactionLayers,
+        // A tiny, 2 cm-wide assist compensates for small realistic jewel cases.
+        // Never go through the nearest blocking solid collider.
+        const float assistanceRadius = 0.02f;
+        int nearbyHits = Physics.SphereCastNonAlloc(ray, assistanceRadius,
+            hits, firstSolidDistance, interactionLayers,
             QueryTriggerInteraction.Ignore);
+
+        PhysicalInteractable nearCase = null;
+        float nearestDistance = float.MaxValue;
         for (int i = 0; i < nearbyHits; i++)
         {
             RaycastHit hit = hits[i];
             PhysicalInteractable candidate =
                 hit.collider.GetComponentInParent<PhysicalInteractable>();
-            if (candidate == null || candidate.IsHeld || hit.distance >= closestDistance)
+            if (candidate == null || candidate.IsHeld
+                || hit.distance >= nearestDistance)
             {
                 continue;
             }
 
-            closest = candidate;
-            closestDistance = hit.distance;
+            nearCase = candidate;
+            nearestDistance = hit.distance;
         }
 
-        if (closest != null)
+        if (nearCase != null)
         {
-            return closest;
+            return nearCase;
         }
 
-        // If a thin browsing lip obscures the actual front case, use the
-        // non-solid shelf targeting volume to find that column's front copy.
-        // Do not redirect collection when the player is already carrying stock.
+        // A shallow browse-bin lip can hide a case collider. Only resolve
+        // the front case if the crosshair is genuinely near a visible facing,
+        // never by guessing from the large trigger's entry-point height.
         if (carriedItems.Count == 0
-            && TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 worldPoint)
-            && shelf.TryGetFrontCaseAt(worldPoint, out PhysicalInteractable front, out _)
+            && TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 facePoint)
+            && shelf.TryGetFrontCaseAt(facePoint,
+                out PhysicalInteractable front, out _)
             && front != null && !front.IsHeld)
         {
             return front;
@@ -337,7 +346,7 @@ public sealed class PlayerInteraction : MonoBehaviour
             return false;
         }
 
-        Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
+        Ray ray = CentreScreenRay();
         int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange,
             interactionLayers, QueryTriggerInteraction.Collide);
 
@@ -346,17 +355,50 @@ public sealed class PlayerInteraction : MonoBehaviour
         {
             RaycastHit hit = hits[i];
             ShelfSlot candidate = hit.collider.GetComponentInParent<ShelfSlot>();
-            if (candidate == null || hit.distance >= closestDistance)
+            if (candidate == null || hit.distance >= closestDistance
+                || !hit.collider.isTrigger)
             {
                 continue;
             }
 
             closestShelfSlot = candidate;
-            closestHitPoint = hit.point;
             closestDistance = hit.distance;
         }
 
-        return closestShelfSlot != null;
+        if (closestShelfSlot == null)
+        {
+            return false;
+        }
+
+        // Respect walls, furniture and other solid obstructions in front of
+        // the target rack. The rack's own frame must not block its browsing
+        // volume, hence the shelf-parent check.
+        Transform targetRoot = closestShelfSlot.transform.parent;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = hits[i];
+            if (hit.collider.isTrigger
+                || hit.distance + 0.01f >= closestDistance)
+            {
+                continue;
+            }
+
+            if (targetRoot == null
+                || !hit.collider.transform.IsChildOf(targetRoot))
+            {
+                closestShelfSlot = null;
+                return false;
+            }
+        }
+
+        if (!closestShelfSlot.TryGetAimedFacePoint(ray, interactionRange,
+            out closestHitPoint))
+        {
+            closestShelfSlot = null;
+            return false;
+        }
+
+        return true;
     }
 
     private void RefreshPlacementHints()
@@ -445,12 +487,15 @@ public sealed class PlayerInteraction : MonoBehaviour
         EnsureStyles();
 
         Color previous = GUI.color;
-        GUI.color = focusedMedia != null
-            ? new Color(0.88f, 0.93f, 0.79f, 0.95f)
-            : new Color(0.87f, 0.90f, 0.84f, 0.65f);
+        GUI.color = aimedItem != null
+            ? new Color(0.64f, 0.94f, 0.76f, 1f)
+            : aimedShelf != null
+                ? new Color(0.60f, 0.85f, 0.96f, 1f)
+                : new Color(0.92f, 0.91f, 0.86f, 0.75f);
         GUI.DrawTexture(new Rect(Screen.width * 0.5f - 2f,
             Screen.height * 0.5f - 2f, 4f, 4f), Texture2D.whiteTexture);
         GUI.color = previous;
+        DrawAimPrompt();
 
         if (carriedItems.Count > 0)
         {
@@ -470,6 +515,49 @@ public sealed class PlayerInteraction : MonoBehaviour
         {
             DrawLargeInspection(inspectedMedia);
         }
+    }
+
+    private void DrawAimPrompt()
+    {
+        string message = null;
+        if (aimedItem != null)
+        {
+            MediaItem media = aimedItem.GetComponent<MediaItem>();
+            AlbumDefinition album = media != null ? media.AlbumDefinition : null;
+            string artist = album != null ? album.ArtistName : "CD";
+            if (carriedItems.Count < MaxCarryItems)
+            {
+                message = "E  PICK UP  " + artist;
+                if (SelectedItem != null && aimedShelf != null)
+                {
+                    message += "     SHIFT+E  SHELVE";
+                }
+            }
+            else if (aimedShelf != null)
+            {
+                message = "E  SHELVE SELECTED CD";
+            }
+        }
+        else if (aimedShelf != null && SelectedItem != null)
+        {
+            message = "E  SHELVE SELECTED CD";
+        }
+
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        const float maxWidth = 320f;
+        float width = Mathf.Min(maxWidth, Screen.width - 24f);
+        float x = Mathf.Clamp(Screen.width * 0.5f + 13f,
+            8f, Screen.width - width - 8f);
+        float y = Mathf.Clamp(Screen.height * 0.5f + 11f,
+            8f, Screen.height - 34f);
+        DrawPanel(new Rect(x, y, width, 27f),
+            new Color(0.06f, 0.12f, 0.14f, 0.91f));
+        GUI.Label(new Rect(x + 8f, y + 3f, width - 16f, 21f),
+            FitText(message, albumDetailStyle, width - 16f), albumDetailStyle);
     }
 
     private void DrawAlbumCard(MediaItem media)
