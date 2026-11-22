@@ -183,3 +183,14 @@ Replace each existing bay's visual geometry but **preserve stable shelf IDs and 
 ## 2026-11-22 - Carry up to ten CDs; scroll to choose
 
 Player asked to hold up to 10 physical CD copies and confirmed that the **mouse wheel should scroll through the carried pile**. The implementation keeps individual copy IDs, with a selected item index; E collects another case until the stack is full, E shelves the selected case when aimed at a rack, Shift+E forces shelving when another case is in front, and G drops the selected case. Add an on-screen ordered stack with selected artist/title, rather than making players infer titles from very small 3D artwork. Save and load the carried IDs and selection in backward-compatible v2 data, retaining the existing free-form shelving and case physics.
+
+
+## 2026-11-22 — Comprehensive seven-row store pass
+
+The user asked for all outstanding visual/gameplay improvements in one integrated iteration: seven physical browsing rows per section, four CDs stacked behind every facing, enough stock to fill the shop, an unclipped ten-CD carry interface, more legible cover art, smaller readable category signs, physical furniture supports and a warmer retail atmosphere.
+
+Each rack now has nine facings across each of seven rows, with four real item positions deep (252 capacity). The carrying wheel still changes the highlighted carried album; empty-handed scrolling flips the copies behind a facing, persisting their actual physical order. The expanded fixture contains 248 albums / 1,388 CDs, with 228 reference, 892 misfiled and 268 loose cases at fresh start. Original 140 stock IDs and all eleven shelf IDs survive. New expanded stock IDs are appended to existing version-2 saves without resetting progress.
+
+The ten-CD panel now uses two columns of five and truncates long labels with ellipses, while full album detail remains in the focus panel. Covers have original high-contrast bitmap lettering instead of the previous overlapping per-item TextMesh objects. The store has supported furniture, more restrained signage and warmer lighting.
+
+This is an implementation candidate. Unity Editor compilation, frame rate, physical interactions, rendered cover readability and migration are still acceptance requirements; do not claim a finished milestone based on source tests alone.

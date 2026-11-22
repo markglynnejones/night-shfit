@@ -1,62 +1,55 @@
 # Night Shift
 
-A first-person, cosy **physical-media sorting game** set in a fictional British record shop around 2006. One tremendous post-sale mess, one persistent shop, no timed shifts.
+A first-person cosy organisation game in a fictional British record shop around 2006, after a catastrophic sale. One persistent tidy-up task, not repeating shifts.
 
-## Run the Rock / Indie vertical slice
+## Current extended Rock / Indie playtest candidate
 
-1. Open the Game folder as a Unity project using **Unity 6000.5.8f1** (Unity 6.5, URP).
-2. Open Assets/Scenes/Prototype.unity.
-3. Enter **Play** mode. The prototype builds stock, shelving and scenery from original scene templates.
-4. Use **WASD + mouse** to move, **E** to pick up/place/drop, **Esc** to free the cursor, **P** to save and **O** to reload (also F5/F9 in the desktop Editor).
-5. During Play mode choose **Night Shift > Validate Running Vertical Slice**. The Console should report 40 catalogue entries, 140 unique physical copies and 11 shelving bays.
-6. Follow [the extended test](VERTICAL_SLICE_QA.md).
+This iteration addresses the real Unity playtest feedback: empty-looking racks, tiny hard-to-read CD sleeves, a cropped ten-CD carrying list, floating furniture and enormous genre lettering.
 
-## What is in this build
+| Category | Quantity |
+| --- | --- |
+| Fictional albums | 248 |
+| Independent physical CDs | 1,388 |
+| Browsing rack sections | 11 |
+| Sloping rows per section | 7 |
+| Cover positions per row | 9 |
+| Physical CD depth per position | 4 |
+| Maximum cases per rack | 252 |
 
-- 40 fictional Rock/Indie albums: eight saved ScriptableObject prototypes plus 32 deterministic runtime entries.
-- 140 physical CDs, with varying quantities per title, sharing album metadata and procedural cover art.
-- Eleven capacity-limited shelf sections across back and side walls, signed by genre and artist ranges.
-- Approximately 14% reference stock in correct alphabetical order, 11% deliberately misfiled, and the remainder in piles around the shop.
-- **Free-form shelving:** wrong genres and wrongly alphabetised stock can be placed.
-- Ordered stock is counted for gentle progress feedback, without forcing a specific workflow.
-- Save/load/autosave retains each physical copy, its position or shelf and its precise shelf order. Saves use **format v2**, with backup.
-- Original procedural sleeve art, sale signage, display bins, checkout, closed shutters and a progress overlay.
-- **Scale/readability pass:** jewel cases now measure roughly 17.2 by 13.6 cm, shelf spacing and pile heights match their new size, the player starts at floor level (eye approximately 1.65 m), and the room has calmer warm colours with red Rock / teal Indie signs.
-- Looking at or holding a case shows a small artist/album/genre panel at the bottom-right so you can read real-sized stock without oversized 3D labels.
+Every CD has its own persistent ID and shares procedural album artwork with copies of the same record. The original 40 albums, 140 physical cases and all existing IDs are preserved, then 208 albums and 1,248 new stock copies are appended.
 
-## Persistence / old saves
+Other improvements include original 256-pixel cover illustrations with high-contrast artist/title lettering, no overlapping 3D labels, restrained Rock/Indie signage, properly supported tables and bins, subtle shop details and softer lighting. Correctness remains feedback, not a restriction on where you can put a CD.
 
-Version 2 saves intentionally replace the old 21-item demo save schema. **If previous prototype progress matters, back up** the existing prototype-save.json in Unity's Application.persistentDataPath before running this build. Version 1 files are not migrated. Without a valid v2 file the new authored starting state is used.
+## Run and validate
 
-To restart the slice from its initial disorder, **close Unity Play mode** and move prototype-save.json and prototype-save.json.bak elsewhere before playing again. Keep backups if you wish to restore them.
+Open the Game folder in Unity Editor 6000.5.8f1. Open Assets/Scenes/Prototype.unity, enter Play mode, then use Night Shift > Validate Running Vertical Slice. The Console should confirm 248 albums, 1,388 unique physical IDs, 11 unique shelves and 252 capacity per shelf. Complete VERTICAL_SLICE_QA.md before accepting this milestone.
 
-The scale/readability pass keeps the version 2 save schema. Saved CDs on shelves keep their persistent IDs and order, and loose CDs from the old large-case build are repositioned onto the nearest static surface the first time that save is loaded. Your local save is not reset. If you prefer a fresh start, move your original save files aside while Unity is closed.
+## Controls
 
-## Status and limitations
+| Input | Behaviour |
+| --- | --- |
+| WASD and mouse | Walk and look |
+| E on a CD | Collect it into your ten-CD hand stack |
+| Mouse wheel while carrying | Change the highlighted CD in the two-column carry list |
+| E on a rack | Place only the selected carried case |
+| Shift+E | Force rack placement when another case is under the crosshair |
+| G | Drop only the selected CD with the existing physical handling |
+| Mouse wheel while empty-handed at a rack | Flip through the physical copies behind the front CD |
+| P and O | Save and reload (F5 and F9 also available in Unity Editor) |
+| Escape | Free the cursor |
 
-This branch is a feature-complete **candidate** for the first 30–60-minute playtest. Source changes have been committed, **but local Unity Editor compilation, scene play, save recovery and a timed playtest remain unverified**. The milestone is not accepted until the QA gates pass.
+The carrying panel uses two columns so all ten physical copies can be listed without the bottom items disappearing in a typical Unity Game window. Long names are ellipsised only where necessary; the larger focus panel displays the current album.
 
-Long-term ambitions (not in this prototype): more genres, DVDs, games, hundreds of distinct titles and eventually 2,000–3,000+ physical items. Do not scale before evaluating this loop.
+## Save preservation
 
+Existing version-2 save files remain compatible. The original physical IDs slice-0001 to slice-0140 and all 11 stable shelf IDs retain their saved positions and order. On first load after this expansion, previously unknown expanded-* copies are added around the saved stock, without a shuffle of your previous work, and written out by autosave. A save from an earlier prototype with version 1 is still unsupported.
 
-## CD flip-bin browsing pass
+Before this major content expansion, BACK UP prototype-save.json and prototype-save.json.bak in Application.persistentDataPath. On Windows this is usually in the user's AppData/LocalLow/DefaultCompany/Game folder.
 
-The original tall empty display shelves have been replaced in code with shallow three-tier browsing bins, closer to an early-2000s UK high-street CD shop. Cases face outward at a gentle angle and the genre/range signs stand above them. Each section keeps its original persistent ID and capacity (27 CDs) and now has nine cover-facing positions in each of three staggered rows. Aim at a bin and press **E** to place, or at a particular cover to pick up.
+To deliberately begin with fresh shop chaos, quit Play mode and move both saved JSON files somewhere safe before restarting the game.
 
-**New-save starting stock:** 20 correctly shelved reference cases, 60 intentionally misfiled cases and 60 loose cases. This makes the browsing racks feel like a busy shop despite the post-sale mess. Existing local save files remain authoritative; their stock counts and shelf ordering are not changed. If you want to see the new starting layout, back up your "prototype-save.json" and ".bak" before moving them out of the save directory while Unity is closed.
+## Verification status
 
-This is a source-level implementation awaiting the in-Editor visual and interaction tests above; it has not been accepted as final shelf geometry.
+The repository contains Unity-free source/data tests, and an in-Editor runtime validator. Source tests cannot establish actual Unity compilation, performance or rendered appearance. This 1,388-case candidate requires a local 15-30 minute player and frame-rate test before the next category is added.
 
-
-## Carry up to 10 CDs at once
-
-The player can now hold **ten individual physical CD cases** in one visible hand stack. Each CD keeps its physical ID and album definition.
-
-- **E** while looking at another case: collect it into your stack, up to 10.
-- **Mouse wheel**: browse the held albums in either direction, with the current artist/title clearly highlighted in the top-right stack list and displayed in the larger bottom-right album card.
-- **E** while aiming at a free rack area: insert only the selected CD; the other held cases remain.
-- **Shift+E** while aiming at a rack: shelve the selected CD even if the crosshair also intersects an existing case.
-- **G**: drop only the selected case, using the game's regular drop physics.
-- **P** save, **O** reload: all carried physical IDs, their ordering and the selected CD are restored. Existing v2 save files without a carry stack remain loadable.
-
-The goal is to let players scoop up a handful of CDs and shelve them together without making the tedious trip back to the floor after every copy. See the ten-CD acceptance checks in VERTICAL_SLICE_QA.md.
+No timed shifts, XP economy or shop-management systems are part of this prototype.

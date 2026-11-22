@@ -35,7 +35,7 @@ It currently focuses on music and should support:
 
 ## 22 November 2026 implementation checkpoint
 
-The Rock/Indie slice is implemented in the development branch as a **candidate**: 40 album definitions, 140 physical copies, 11 shelving bays, free-form misfiling, deterministic initial disorder, original procedural covers, organisation progress and save/load. This is **not an accepted playable milestone** until the scene runs and the gates in VERTICAL_SLICE_QA.md pass in Unity.
+The initial 40-album / 140-case slice was played in Unity and led to further development. The latest expanded candidate contains 248 fictional albums, 1,388 independent physical CDs, seven-row four-deep browse racks, a ten-CD carrying stack, legible procedural art, shop fixtures, and persistent free-form placement. It has not passed the expanded-performance/playtest gates in VERTICAL_SLICE_QA.md.
 
 ## Near-Term Vertical Slice
 

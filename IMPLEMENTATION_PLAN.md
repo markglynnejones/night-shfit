@@ -364,3 +364,10 @@ The development branch feature/rock-indie-vertical-slice is now a first-pass **4
 The source-level structural checks pass, but the Unity Editor has not been run here. **Do not mark Phase 3 complete until Unity compilation, save recovery and an actual 30–60 minute playtest pass.**
 
 Immediate next gate: follow VERTICAL_SLICE_QA.md in Unity 6000.5.8f1, address blockers and record the playtest result. **Do not scale the catalogue until this gate passes.**
+
+
+## 2026-11-22 — Expanded retail pass (pending in-Editor acceptance)
+
+The latest feature branch implements a single comprehensive retail-quality pass based on actual Unity screenshots: 248 albums, 1,388 CDs, 11 racks with seven rows and four-deep positions, an unclipped two-column carrying list, original textured cover lettering, supported furniture and warmer lighting. It also adds wheel browsing of deeper rack copies and backward-compatible v2 save migration for the original 140 IDs.
+
+The work goes beyond the original small slice because the player explicitly requested a fully populated and visually clearer shop. Review frame rate and complete the runtime checklist in VERTICAL_SLICE_QA.md before extending to another media category. Static checks alone do not prove Unity compilation or playability.
