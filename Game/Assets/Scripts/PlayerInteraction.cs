@@ -201,7 +201,7 @@ public sealed class PlayerInteraction : MonoBehaviour
         closestHitPoint = Vector3.zero;
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange, interactionLayers, QueryTriggerInteraction.Ignore);
+        int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange, interactionLayers, QueryTriggerInteraction.Collide);
 
         float closestDistance = float.MaxValue;
 

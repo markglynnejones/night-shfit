@@ -142,7 +142,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                 {
                     correctlyShelved.Add(interactable);
                 }
-                else if (physicalId % 8 == 0) // Some stock misfiled on the wrong shelves.
+                else if (physicalId % 2 == 0) // Busy bins: plenty of wrongly shelved stock after the sale.
                 {
                     misfiled.Add(interactable);
                 }
@@ -311,7 +311,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         for (int offset = 0; offset < slots.Count; offset++)
         {
             ShelfSlot slot = slots[(seed * 3 + offset) % slots.Count];
-            if (!slot.CanAccept(album) && slot.ItemCount < 18)
+            if (!slot.CanAccept(album) && slot.ItemCount < slot.Capacity)
             {
                 return slot;
             }

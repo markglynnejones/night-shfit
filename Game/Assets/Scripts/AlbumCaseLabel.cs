@@ -82,12 +82,13 @@ public sealed class AlbumCaseLabel : MonoBehaviour
     {
         if (frontArtistLabel != null)
         {
-            frontArtistLabel.SetActive(!shelfMode);
+            // Flip-bin browsing shows the actual cover, not just the spine.
+            frontArtistLabel.SetActive(true);
         }
 
         if (frontAlbumLabel != null)
         {
-            frontAlbumLabel.SetActive(!shelfMode);
+            frontAlbumLabel.SetActive(true);
         }
 
         if (frontSpineLabel != null)
@@ -97,7 +98,7 @@ public sealed class AlbumCaseLabel : MonoBehaviour
 
         if (shelfSpineLabel != null)
         {
-            shelfSpineLabel.SetActive(shelfMode);
+            shelfSpineLabel.SetActive(false);
         }
     }
 

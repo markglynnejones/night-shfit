@@ -171,3 +171,10 @@ The first extended playtest uses 40 fictional albums, 140 physical cases and 11 
 ## 2026-11-22 - Five-minute scale and readability feedback
 
 First in-Editor playtest: the player found the CD physics enjoyable but felt the CDs, shop props and general presentation were oversized and the greybox difficult to read. The next checkpoint scales physical CDs to 0.22 of their prototype root scale (approximately 17.2 by 13.6 cm), retunes shelf and pile geometry, keeps existing Rigidbody pickup/drop behaviour, starts the player on the floor, and improves shop materials, department signs and contextual album readability. The scale pass should not add timed shifts or change the freely-ordered persistence model. Acceptance requires another five-to-ten-minute Unity playtest.
+
+
+## 2026-11-22 - Shelving reference: music-shop flip-through bins
+
+The first in-game screenshot showed oversized empty upright shelves, even after correcting CD size. The user's visual reference is a UK high-street CD shop with sloped, densely packed face-out browsing trays, front lips and section-divider tabs. Prefer this recognisable retail geometry to bookcase shelves.
+
+Replace each existing bay's visual geometry but **preserve stable shelf IDs and authored order**. Use 3 tiers × 9 cover-facing positions, 27 copies per bay; allow incorrect shelving; keep the interaction hit volume broad and non-colliding. Improve only the fresh starting layout to 20 correct, 60 misfiled and 60 loose cases so bins look less barren. Do not forcibly replace an existing player's save.

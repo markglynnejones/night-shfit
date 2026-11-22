@@ -82,23 +82,23 @@ def main() -> None:
                 home = matching[0]
                 occupancy[home[0]] += 1
                 reference += 1
-            elif total % 8 == 0:
+            elif total % 2 == 0:
                 misplaced += 1
                 # Mirrors FindIncorrectShelf's modulo/first-capacity strategy.
                 destination = next((
                     shelves[( (misplaced - 1) * 3 + offset) % len(shelves)]
                     for offset in range(len(shelves))
                     if not accepts(shelves[((misplaced - 1) * 3 + offset) % len(shelves)], album)
-                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 18
+                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 27
                 ), None)
                 require(destination is not None, f"No misfile shelf space for {album[0]}")
                 occupancy[destination[0]] += 1
             else:
                 loose += 1
     require(total == 140, f"Expected 140 physical cases, got {total}")
-    require(reference == 20 and misplaced == 15 and loose == 105,
+    require(reference == 20 and misplaced == 60 and loose == 60,
             f"Unexpected start split: {reference}/{misplaced}/{loose}")
-    require(max(occupancy.values()) <= 18, "Starting shelf is over capacity")
+    require(max(occupancy.values()) <= 27, "Starting shelf is over capacity")
 
     # Visual proportions are coupled: changing case scale without retuning piles
     # or shelf spacing would leave the room full of floating, oversized gaps.
@@ -127,6 +127,20 @@ def main() -> None:
     require("RestoreShelvedItems(" in save and "RestoreLooseItems(" in save,
             "Save load lacks stock restoration")
     require("TryGetKnownAlbum" in shelf, "Shelf placement must allow the wrong genre")
+    require("CoversPerTier = 9" in shelf and "TierCount = 3" in shelf,
+            "CD racks no longer use nine-by-three browsing tiers")
+    require("new(28f, 0f, 0f)" in shelf, "CD faces no longer tilt towards shoppers")
+    require('CreateRackPart(shelf, "Browsing Deck "' in layout,
+            "CD browsing deck geometry was not built")
+    require("placementVolume.isTrigger = true" in layout,
+            "Browse tray placement volume must not collide with players")
+    require("QueryTriggerInteraction.Collide" in player,
+            "Shelving raycast must be able to see tray triggers")
+    require("slot.transform.localScale = new Vector3(2.02f, 0.57f, 0.75f)" in layout,
+            "The bin placement area is missing")
+    require("new Vector3(-0.35f, 1.38f, 0.268f)" in
+            (SCRIPTS / "ShelfSectionLabel.cs").read_text(encoding="utf-8"),
+            "Flip-bin genre sign is no longer on the upright header")
     require("WouldRemainLogicallyOrdered" not in shelf,
             "Incorrectly ordered stock is still being blocked")
     require("CountCorrectlyOrganisedItems()" in shelf, "Progress feedback missing")
@@ -144,6 +158,7 @@ def main() -> None:
           f"{misplaced} misfiled, {loose} loose.")
     print("PASS: Save/load contracts, scene wiring and permissive shelving signatures.")
     print("PASS: CD proportions, pile/shelf geometry, room contrast, readable inspect prompt and save upgrade contracts.")
+    print("PASS: Three-tier face-out racks, marker/trigger setup, dividers and 80 initially shelved cases.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
