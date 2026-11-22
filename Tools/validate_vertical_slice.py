@@ -89,7 +89,7 @@ def main() -> None:
                     shelves[( (misplaced - 1) * 3 + offset) % len(shelves)]
                     for offset in range(len(shelves))
                     if not accepts(shelves[((misplaced - 1) * 3 + offset) % len(shelves)], album)
-                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 18
+                    and occupancy[shelves[((misplaced - 1) * 3 + offset) % len(shelves)][0]] < 27
                 ), None)
                 require(destination is not None, f"No misfile shelf space for {album[0]}")
                 occupancy[destination[0]] += 1
@@ -98,7 +98,7 @@ def main() -> None:
     require(total == 140, f"Expected 140 physical cases, got {total}")
     require(reference == 20 and misplaced == 60 and loose == 60,
             f"Unexpected start split: {reference}/{misplaced}/{loose}")
-    require(max(occupancy.values()) <= 18, "Starting shelf is over capacity")
+    require(max(occupancy.values()) <= 27, "Starting shelf is over capacity")
 
     # Visual proportions are coupled: changing case scale without retuning piles
     # or shelf spacing would leave the room full of floating, oversized gaps.
@@ -127,8 +127,8 @@ def main() -> None:
     require("RestoreShelvedItems(" in save and "RestoreLooseItems(" in save,
             "Save load lacks stock restoration")
     require("TryGetKnownAlbum" in shelf, "Shelf placement must allow the wrong genre")
-    require("CoversPerTier = 6" in shelf and "TierCount = 3" in shelf,
-            "CD racks no longer use six-by-three browsing tiers")
+    require("CoversPerTier = 9" in shelf and "TierCount = 3" in shelf,
+            "CD racks no longer use nine-by-three browsing tiers")
     require("new(28f, 0f, 0f)" in shelf, "CD faces no longer tilt towards shoppers")
     require('CreateRackPart(shelf, "Browsing Deck "' in layout,
             "CD browsing deck geometry was not built")

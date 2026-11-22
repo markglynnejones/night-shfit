@@ -15,10 +15,10 @@ public sealed class ShelfSlot : MonoBehaviour
     // Reference: real music-shop flip-bins, not bookcases. Covers tilt slightly
     // towards a standing customer and occupy three staggered front-facing tiers.
     private static readonly Vector3 ShelvedEulerAngles = new(28f, 0f, 0f);
-    private const int CoversPerTier = 6;
+    private const int CoversPerTier = 9;
     private const int TierCount = 3;
-    private const float FirstCoverX = -0.745f;
-    private const float CoverHorizontalSpacing = 0.295f;
+    private const float FirstCoverX = -0.84f;
+    private const float CoverHorizontalSpacing = 0.21f;
     private const float FirstTierZ = -0.300f;
     private const float TierDepthSpacing = 0.240f;
     private const float FirstTierHeight = 0.885f;
@@ -29,6 +29,7 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public string ShelfSectionId => shelfSectionId;
     public int ItemCount => placedItems.Count;
+    public int Capacity => maxItems;
     public string AcceptedGenre => acceptedGenre;
 
     // Longest ordered subsequence: stock that can remain while wrongly placed stock is removed.
@@ -83,10 +84,10 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ConfigureJewelCaseSpacing()
     {
-        // 18 cases across three tiers of six cover-facing slots.
-        // Keep maxItems at or below our geometry's capacity.
+        // Nine real-sized CDs fit across each 2.1 m tray with small separators.
+        // The scene's old 18-copy setting is intentionally upgraded to 27.
         itemSpacing = CoverHorizontalSpacing;
-        maxItems = Mathf.Min(maxItems, CoversPerTier * TierCount);
+        maxItems = CoversPerTier * TierCount;
     }
 
     public bool TryPlace(PhysicalInteractable item)

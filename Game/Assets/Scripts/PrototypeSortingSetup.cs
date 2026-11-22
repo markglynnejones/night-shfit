@@ -311,7 +311,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         for (int offset = 0; offset < slots.Count; offset++)
         {
             ShelfSlot slot = slots[(seed * 3 + offset) % slots.Count];
-            if (!slot.CanAccept(album) && slot.ItemCount < 18)
+            if (!slot.CanAccept(album) && slot.ItemCount < slot.Capacity)
             {
                 return slot;
             }

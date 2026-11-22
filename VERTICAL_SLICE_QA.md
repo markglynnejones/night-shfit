@@ -85,7 +85,7 @@ Photo reference: real UK high-street music store CD flip bins (roughly mid-2000s
 
 - [ ] Each of the 11 stock bays looks like a shallow waist-height browsing bin with three visible rows, not a tall empty display cabinet
 - [ ] A CD is nearly real jewel-case size (17.2 × 13.6 cm) and displays its FRONT COVER tilted towards the customer, not an edge-on spine
-- [ ] Six cases fit across a row and three staggered rows are available: 18 physical copies per section
+- [ ] Nine cases fit across a row and three staggered rows are available: 27 physical copies per section
 - [ ] Rock uses a burgundy sign, Indie uses petrol/teal, and alphabet ranges remain visible beside each sign
 - [ ] Front lips and divider tabs imply real record-store browsing racks, without blocking art or obscuring the interaction target
 - [ ] The player can pick up one case in a visually crowded bin (aim at its face and press E), move it, and put it between two others

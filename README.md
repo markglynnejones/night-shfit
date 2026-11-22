@@ -41,7 +41,7 @@ Long-term ambitions (not in this prototype): more genres, DVDs, games, hundreds 
 
 ## CD flip-bin browsing pass
 
-The original tall empty display shelves have been replaced in code with shallow three-tier browsing bins, closer to an early-2000s UK high-street CD shop. Cases face outward at a gentle angle and the genre/range signs stand above them. Each section keeps its original persistent ID and capacity (18 CDs) and now has six cover-facing positions in each of three staggered rows. Aim at a bin and press **E** to place, or at a particular cover to pick up.
+The original tall empty display shelves have been replaced in code with shallow three-tier browsing bins, closer to an early-2000s UK high-street CD shop. Cases face outward at a gentle angle and the genre/range signs stand above them. Each section keeps its original persistent ID and capacity (27 CDs) and now has nine cover-facing positions in each of three staggered rows. Aim at a bin and press **E** to place, or at a particular cover to pick up.
 
 **New-save starting stock:** 20 correctly shelved reference cases, 60 intentionally misfiled cases and 60 loose cases. This makes the browsing racks feel like a busy shop despite the post-sale mess. Existing local save files remain authoritative; their stock counts and shelf ordering are not changed. If you want to see the new starting layout, back up your "prototype-save.json" and ".bak" before moving them out of the save directory while Unity is closed.
 
