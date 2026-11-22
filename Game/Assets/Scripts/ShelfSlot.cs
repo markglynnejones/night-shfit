@@ -30,6 +30,9 @@ public sealed class ShelfSlot : MonoBehaviour
     private const float DeepCaseOffsetY = 0.013f;
 
     private readonly List<PhysicalInteractable> placedItems = new();
+    // Each CD owns a fixed physical position (face + 63 * depth). Removing
+    // one case compacts only its own four-deep column, never adjacent rows.
+    private readonly Dictionary<PhysicalInteractable, int> physicalSlots = new();
     private GameObject placementHint;
 
     public string ShelfSectionId => shelfSectionId;
@@ -95,6 +98,7 @@ public sealed class ShelfSlot : MonoBehaviour
         artistRangeStart = firstArtistInitial;
         artistRangeEnd = lastArtistInitial;
         placedItems.Clear();
+        physicalSlots.Clear();
     }
 
     public void ConfigureJewelCaseSpacing()
@@ -110,9 +114,10 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public bool TryPlace(PhysicalInteractable item, Vector3 placementWorldPoint)
     {
-        if (placedItems.Count >= maxItems)
+        int face = FaceIndexForPoint(placementWorldPoint);
+        if (placedItems.Count >= maxItems || CountInFace(face) >= MaxDepth)
         {
-            Debug.Log("This shelf section is full.");
+            Debug.Log("This CD facing is full. Choose another position.");
             return false;
         }
 
@@ -121,8 +126,22 @@ public sealed class ShelfSlot : MonoBehaviour
             return false;
         }
 
-        // The player may misfile a CD. Correct order is feedback, not a placement rule.
-        PlaceItem(item, InsertionIndexFor(placementWorldPoint));
+        // The selected CD becomes the new front cover. Only cases already in
+        // this one four-deep stack move back by one physical position.
+        foreach (PhysicalInteractable other in placedItems)
+        {
+            int slot = physicalSlots[other];
+            if (slot % FacesPerLayer == face)
+            {
+                physicalSlots[other] = slot + FacesPerLayer;
+            }
+        }
+
+        placedItems.Add(item);
+        physicalSlots[item] = face;
+        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform,
+            this, Vector3.zero, ShelvedEulerAngles);
+        ReflowPlacedItems();
 
         Debug.Log($"Shelved {albumDefinition.ArtistName} - {albumDefinition.AlbumTitle} in {acceptedGenre} / {ArtistRangeLabel()}.");
         PrototypeSaveLoadController.NotifyPersistentStateChanged();
@@ -136,8 +155,19 @@ public sealed class ShelfSlot : MonoBehaviour
             return false;
         }
 
-        // Correct reference stock begins in sort order; misplaced items preserve authored chaos.
-        PlaceItem(item, deliberatelyMisfiled ? placedItems.Count : SortedInsertionIndexFor(item));
+        // Scene creation happens before gameplay. Build the reference fixture
+        // in the legacy layer-first order, then keep every position stable
+        // once the player starts touching individual stacks.
+        placedItems.Insert(deliberatelyMisfiled
+            ? placedItems.Count : SortedInsertionIndexFor(item), item);
+        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform,
+            this, Vector3.zero, ShelvedEulerAngles);
+        for (int i = 0; i < placedItems.Count; i++)
+        {
+            physicalSlots[placedItems[i]] = i;
+        }
+
+        ReflowPlacedItems();
         return true;
     }
 
@@ -150,13 +180,15 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ShowPlacementHintFor(PhysicalInteractable item, Vector3 placementWorldPoint)
     {
-        if (placedItems.Count >= maxItems || !TryGetKnownAlbum(item, out _))
+        int facing = FaceIndexForPoint(placementWorldPoint);
+        if (placedItems.Count >= maxItems || CountInFace(facing) >= MaxDepth
+            || !TryGetKnownAlbum(item, out _))
         {
             HidePlacementHint();
             return;
         }
 
-        int insertionIndex = InsertionIndexFor(placementWorldPoint);
+        int insertionIndex = facing;
         EnsurePlacementHint();
         Transform referenceTransform = snapPoint != null ? snapPoint : transform;
         Vector3 hintPosition = LocalOffsetForIndex(
@@ -180,10 +212,27 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ClearIfHolding(PhysicalInteractable item)
     {
-        if (placedItems.Remove(item))
+        if (!physicalSlots.TryGetValue(item, out int removedSlot))
         {
-            ReflowPlacedItems();
+            return;
         }
+
+        placedItems.Remove(item);
+        physicalSlots.Remove(item);
+
+        // A gap is filled by the CDs physically behind this particular face.
+        // No neighbouring cover, row or shelf may move.
+        int face = removedSlot % FacesPerLayer;
+        foreach (PhysicalInteractable other in placedItems)
+        {
+            int slot = physicalSlots[other];
+            if (slot % FacesPerLayer == face && slot > removedSlot)
+            {
+                physicalSlots[other] = slot - FacesPerLayer;
+            }
+        }
+
+        ReflowPlacedItems();
     }
 
     public int IndexOf(PhysicalInteractable item)
@@ -191,21 +240,40 @@ public sealed class ShelfSlot : MonoBehaviour
         return placedItems.IndexOf(item);
     }
 
+    public int PhysicalSlotOf(PhysicalInteractable item)
+    {
+        return item != null && physicalSlots.TryGetValue(item, out int slot)
+            ? slot : -1;
+    }
+
     public void ClearPlacedItemsForLoad()
     {
         placedItems.Clear();
+        physicalSlots.Clear();
         HidePlacementHint();
     }
 
-    public bool RestorePlacedItem(PhysicalInteractable item)
+    // physicalSlot is optional for backwards-compatible v2 saves. For older
+    // saves, pass the historical shelfOrder (layer-first flat index).
+    public bool RestorePlacedItem(PhysicalInteractable item, int physicalSlot = -1)
     {
         if (item == null || placedItems.Contains(item) || placedItems.Count >= maxItems)
         {
             return false;
         }
 
+        int slot = physicalSlot >= 0 && physicalSlot < maxItems
+            && !physicalSlots.ContainsValue(physicalSlot)
+                ? physicalSlot : FirstFreePhysicalSlot();
+        if (slot < 0)
+        {
+            return false;
+        }
+
         placedItems.Add(item);
-        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform, this, Vector3.zero, ShelvedEulerAngles);
+        physicalSlots[item] = slot;
+        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform,
+            this, Vector3.zero, ShelvedEulerAngles);
         ReflowPlacedItems();
         return true;
     }
@@ -228,19 +296,56 @@ public sealed class ShelfSlot : MonoBehaviour
         return true;
     }
 
-    private void PlaceItem(PhysicalInteractable item, int insertionIndex)
-    {
-        placedItems.Insert(Mathf.Clamp(insertionIndex, 0, placedItems.Count), item);
-        item.PlaceOnShelf(snapPoint != null ? snapPoint : transform, this, Vector3.zero, ShelvedEulerAngles);
-        ReflowPlacedItems();
-    }
-
     private void ReflowPlacedItems()
     {
-        for (int i = 0; i < placedItems.Count; i++)
+        // This list is also our serialized shelf-order. Keep it in physical
+        // facing/depth order so saved order and quiet progress agree with view.
+        placedItems.Sort((left, right) =>
+            physicalSlots[left].CompareTo(physicalSlots[right]));
+        foreach (PhysicalInteractable item in placedItems)
         {
-            placedItems[i].MoveWithinShelf(LocalOffsetForIndex(i));
+            item.MoveWithinShelf(LocalOffsetForIndex(physicalSlots[item]));
         }
+    }
+
+    private int FirstFreePhysicalSlot()
+    {
+        for (int slot = 0; slot < maxItems; slot++)
+        {
+            if (!physicalSlots.ContainsValue(slot))
+            {
+                return slot;
+            }
+        }
+
+        return -1;
+    }
+
+    private int CountInFace(int face)
+    {
+        int count = 0;
+        foreach (int slot in physicalSlots.Values)
+        {
+            if (slot % FacesPerLayer == face)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private PhysicalInteractable ItemAtSlot(int physicalSlot)
+    {
+        foreach (PhysicalInteractable item in placedItems)
+        {
+            if (physicalSlots[item] == physicalSlot)
+            {
+                return item;
+            }
+        }
+
+        return null;
     }
 
     private Vector3 LocalOffsetForIndex(int index)
@@ -326,27 +431,17 @@ public sealed class ShelfSlot : MonoBehaviour
         return media != null ? media.AlbumDefinition : null;
     }
 
-    private int InsertionIndexFor(Vector3 placementWorldPoint)
+    private int FaceIndexForPoint(Vector3 placementWorldPoint)
     {
-        if (placedItems.Count == 0)
-        {
-            return 0;
-        }
-
-        Transform referenceTransform = snapPoint != null ? snapPoint : transform;
-        Vector3 local = referenceTransform.InverseTransformPoint(placementWorldPoint);
+        Transform reference = snapPoint != null ? snapPoint : transform;
+        Vector3 local = reference.InverseTransformPoint(placementWorldPoint);
         int column = Mathf.Clamp(
             Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
             0, CoversPerTier - 1);
-        // The non-solid tray collider is hit at its front face. Its Z is not
-        // the case row, so use the aim height to choose one of seven tiers.
         int tier = Mathf.Clamp(
             Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
             0, TierCount - 1);
-
-        // The player is choosing a real space within a browsing tray. An
-        // insertion still preserves every other copy's authored order.
-        return Mathf.Min(tier * CoversPerTier + column, placedItems.Count);
+        return tier * CoversPerTier + column;
     }
 
     // Resolve the actual visible facing from the player's centre-screen ray,
@@ -359,7 +454,7 @@ public sealed class ShelfSlot : MonoBehaviour
         worldFacingPoint = Vector3.zero;
         Transform reference = snapPoint != null ? snapPoint : transform;
         int closestFace = -1;
-        const float maximumCentreMiss = 0.13f;
+        const float maximumCentreMiss = 0.16f;
         float bestMissSquared = maximumCentreMiss * maximumCentreMiss;
 
         for (int face = 0; face < FacesPerLayer; face++)
@@ -399,96 +494,39 @@ public sealed class ShelfSlot : MonoBehaviour
     public bool TryGetFrontCaseAt(Vector3 worldPoint,
         out PhysicalInteractable front, out int countInColumn)
     {
-        front = null;
-        countInColumn = 0;
-
-        Transform reference = snapPoint != null ? snapPoint : transform;
-        Vector3 local = reference.InverseTransformPoint(worldPoint);
-        int column = Mathf.Clamp(
-            Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
-            0, CoversPerTier - 1);
-        int tier = Mathf.Clamp(
-            Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
-            0, TierCount - 1);
-        int face = tier * CoversPerTier + column;
-
-        if (face >= placedItems.Count)
-        {
-            return false;
-        }
-
-        front = placedItems[face];
-        for (int depth = 0; depth < MaxDepth; depth++)
-        {
-            if (face + depth * FacesPerLayer >= placedItems.Count)
-            {
-                break;
-            }
-
-            countInColumn++;
-        }
-
+        int face = FaceIndexForPoint(worldPoint);
+        front = ItemAtSlot(face);
+        countInColumn = CountInFace(face);
         return front != null;
     }
 
-    // Browse an individual four-deep column when empty-handed. Rotating the
-    // visible first case to the back changes only that column and persists.
-    // The face is always determined from the same aim location as insertion.
+    // Rotate only the selected vertical four-deep column. Other columns keep
+    // their exact physical position, and changed positions are serialized.
     public bool FlipCoverAt(Vector3 worldPoint, bool backwards = false)
     {
-        if (placedItems.Count <= FacesPerLayer)
-        {
-            return false;
-        }
-
-        Transform reference = snapPoint != null ? snapPoint : transform;
-        Vector3 local = reference.InverseTransformPoint(worldPoint);
-        int column = Mathf.Clamp(
-            Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
-            0, CoversPerTier - 1);
-        int tier = Mathf.Clamp(
-            Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
-            0, TierCount - 1);
-        int face = tier * CoversPerTier + column;
-        int count = 0;
-        for (int layer = 0; layer < MaxDepth; layer++)
-        {
-            if (face + layer * FacesPerLayer >= placedItems.Count)
-            {
-                break;
-            }
-
-            count++;
-        }
-
+        int face = FaceIndexForPoint(worldPoint);
+        int count = CountInFace(face);
         if (count < 2)
         {
             return false;
         }
 
-        int first = face;
-        int last = face + (count - 1) * FacesPerLayer;
-        PhysicalInteractable moving = placedItems[backwards ? last : first];
-
-        if (backwards)
+        PhysicalInteractable[] stack = new PhysicalInteractable[count];
+        for (int depth = 0; depth < count; depth++)
         {
-            for (int layer = count - 1; layer > 0; layer--)
+            stack[depth] = ItemAtSlot(face + depth * FacesPerLayer);
+            if (stack[depth] == null)
             {
-                placedItems[face + layer * FacesPerLayer] =
-                    placedItems[face + (layer - 1) * FacesPerLayer];
+                return false; // protect a malformed legacy stack
             }
-
-            placedItems[first] = moving;
         }
-        else
-        {
-            for (int layer = 0; layer < count - 1; layer++)
-            {
-                placedItems[face + layer * FacesPerLayer] =
-                    placedItems[face + (layer + 1) * FacesPerLayer];
-            }
 
-            placedItems[last] = moving;
+        for (int depth = 0; depth < count; depth++)
+        {
+            int source = backwards
+                ? (depth + count - 1) % count
+                : (depth + 1) % count;
+            physicalSlots[stack[source]] = face + depth * FacesPerLayer;
         }
 
         ReflowPlacedItems();
