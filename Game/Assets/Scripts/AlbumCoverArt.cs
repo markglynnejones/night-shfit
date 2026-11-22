@@ -195,6 +195,13 @@ public sealed class AlbumCoverArt : MonoBehaviour
             DrawLine(pixels, titleLines[i], 43 - i * 23, 3, ink);
         }
 
+        // The original cube's front-face UVs are rotated 180 degrees in the
+        // current scene template. Rotate the raster once, at creation time,
+        // rather than changing the physical case transform (which would break
+        // shelf/hand orientation). This corrects upside-down artist/title text
+        // in both the rack and the selected carried CD.
+        RotateForCaseFrontUV(pixels);
+
         Texture2D texture = new(Size, Size, TextureFormat.RGBA32, false)
         {
             name = "SIDE B / " + album.CatalogueId,
@@ -300,6 +307,18 @@ public sealed class AlbumCoverArt : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+
+    // 180-degree image rotation: flip both texture axes to compensate for
+    // the case's front-face UV orientation, without allocating another array.
+    private static void RotateForCaseFrontUV(Color32[] pixels)
+    {
+        for (int i = 0, opposite = pixels.Length - 1; i < opposite; i++, opposite--)
+        {
+            Color32 current = pixels[i];
+            pixels[i] = pixels[opposite];
+            pixels[opposite] = current;
         }
     }
 
