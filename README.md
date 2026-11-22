@@ -21,12 +21,16 @@ A first-person, cosy **physical-media sorting game** set in a fictional British 
 - Ordered stock is counted for gentle progress feedback, without forcing a specific workflow.
 - Save/load/autosave retains each physical copy, its position or shelf and its precise shelf order. Saves use **format v2**, with backup.
 - Original procedural sleeve art, sale signage, display bins, checkout, closed shutters and a progress overlay.
+- **Scale/readability pass:** jewel cases now measure roughly 17.2 by 13.6 cm, shelf spacing and pile heights match their new size, the player starts at floor level (eye approximately 1.65 m), and the room has calmer warm colours with red Rock / teal Indie signs.
+- Looking at or holding a case shows a small artist/album/genre panel at the bottom-right so you can read real-sized stock without oversized 3D labels.
 
 ## Persistence / old saves
 
 Version 2 saves intentionally replace the old 21-item demo save schema. **If previous prototype progress matters, back up** the existing prototype-save.json in Unity's Application.persistentDataPath before running this build. Version 1 files are not migrated. Without a valid v2 file the new authored starting state is used.
 
 To restart the slice from its initial disorder, **close Unity Play mode** and move prototype-save.json and prototype-save.json.bak elsewhere before playing again. Keep backups if you wish to restore them.
+
+The scale/readability pass keeps the version 2 save schema. Saved CDs on shelves keep their persistent IDs and order, and loose CDs from the old large-case build are repositioned onto the nearest static surface the first time that save is loaded. Your local save is not reset. If you prefer a fresh start, move your original save files aside while Unity is closed.
 
 ## Status and limitations
 

@@ -167,3 +167,7 @@ Wrong-genre and wrongly alphabetised CDs must be physically placeable on any she
 ## 2026-11-22 - First Rock/Indie vertical-slice candidate
 
 The first extended playtest uses 40 fictional albums, 140 physical cases and 11 shelf bays. A minority starts correctly sorted, with others misfiled or scattered in intentional piles. Original procedural sleeve art is sufficient for a first playtest. The implementation is a candidate only; Unity compilation, recovery and a 30–60 minute player test remain acceptance gates.
+
+## 2026-11-22 - Five-minute scale and readability feedback
+
+First in-Editor playtest: the player found the CD physics enjoyable but felt the CDs, shop props and general presentation were oversized and the greybox difficult to read. The next checkpoint scales physical CDs to 0.22 of their prototype root scale (approximately 17.2 by 13.6 cm), retunes shelf and pile geometry, keeps existing Rigidbody pickup/drop behaviour, starts the player on the floor, and improves shop materials, department signs and contextual album readability. The scale pass should not add timed shifts or change the freely-ordered persistence model. Acceptance requires another five-to-ten-minute Unity playtest.
