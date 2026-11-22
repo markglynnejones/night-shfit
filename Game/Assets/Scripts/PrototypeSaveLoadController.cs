@@ -200,12 +200,32 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
                 continue;
             }
 
+            // If saved while carrying an item, restore it as loose stock on a surface
+            // rather than leaving it floating at the camera hold position after load.
+            Vector3 loosePosition = mediaItem.transform.position;
+            Quaternion looseRotation = mediaItem.transform.rotation;
+            if (interactable != null && interactable.IsHeld)
+            {
+                Vector3 rayOrigin = loosePosition + Vector3.up * 0.2f;
+                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit ground, 6f,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                {
+                    loosePosition.y = ground.point.y + 0.04f;
+                }
+                else
+                {
+                    loosePosition.y = 0.04f;
+                }
+
+                looseRotation = Quaternion.Euler(90f, 0f, 0f);
+            }
+
             saveData.looseMediaItems.Add(new LooseMediaItemSaveData
             {
                 physicalItemId = mediaItem.PhysicalItemId,
                 state = LooseState,
-                position = mediaItem.transform.position,
-                rotation = mediaItem.transform.rotation
+                position = loosePosition,
+                rotation = looseRotation
             });
         }
 
@@ -264,6 +284,14 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         bool mainExists = File.Exists(SavePath);
         if (!mainExists)
         {
+            // A crash during the atomic replacement can leave only the backup.
+            if (File.Exists(BackupSavePath)
+                && TryReadSaveFile(BackupSavePath, out saveData, out _))
+            {
+                Debug.LogWarning("Main save absent; recovered backup: " + BackupSavePath);
+                return true;
+            }
+
             if (loadMode == LoadMode.Manual)
             {
                 Debug.LogWarning($"No save file found at {SavePath}.");
