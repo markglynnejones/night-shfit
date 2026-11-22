@@ -31,6 +31,19 @@ public sealed class PhysicalInteractable : MonoBehaviour
         originalParent = transform.parent;
     }
 
+    // Multiple CD copies can share the camera's hold transform. Each receives
+    // its own presentation offset so that the selected cover stays visible.
+    public void SetHeldPresentation(Vector3 localPosition, Vector3 localEulerAngles)
+    {
+        heldLocalPosition = localPosition;
+        heldLocalEulerAngles = localEulerAngles;
+        if (IsHeld)
+        {
+            transform.localPosition = localPosition;
+            transform.localRotation = Quaternion.Euler(localEulerAngles);
+        }
+    }
+
     private void LateUpdate()
     {
         if (!IsHeld)
@@ -67,10 +80,9 @@ public sealed class PhysicalInteractable : MonoBehaviour
         transform.localPosition = heldLocalPosition;
         transform.localRotation = Quaternion.Euler(heldLocalEulerAngles);
 
-        if (removedFromShelf)
-        {
-            PrototypeSaveLoadController.NotifyPersistentStateChanged();
-        }
+        // Picking up loose stock matters just as much as taking a CD from a
+        // shelf: autosave needs to remember every carried physical identity.
+        PrototypeSaveLoadController.NotifyPersistentStateChanged();
     }
 
     public void Drop()
