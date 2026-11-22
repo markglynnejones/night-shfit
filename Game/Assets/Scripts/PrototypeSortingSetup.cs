@@ -190,7 +190,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private static PrototypeOrganisationHud FindAnyProgressHud()
     {
-        return FindFirstObjectByType<PrototypeOrganisationHud>();
+        return FindAnyObjectByType<PrototypeOrganisationHud>();
     }
 
     private static void CompleteSetup()
