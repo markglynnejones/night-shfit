@@ -18,6 +18,11 @@ public sealed class PlayerInteraction : MonoBehaviour
     private readonly RaycastHit[] hits = new RaycastHit[64];
     private ShelfSlot[] shelfSlots = new ShelfSlot[0];
     private MediaItem focusedMedia;
+    private MediaItem inspectedMedia;
+    private int hoveredColumnCount;
+    private GUIStyle inspectHeaderStyle;
+    private GUIStyle inspectArtistStyle;
+    private GUIStyle inspectAlbumStyle;
 
     private GUIStyle albumArtistStyle;
     private GUIStyle albumTitleStyle;
@@ -86,9 +91,20 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         PhysicalInteractable lookedAt = FindLookedAtInteractable();
         PhysicalInteractable selected = SelectedItem;
-        PhysicalInteractable shown = lookedAt != null && carriedItems.Count < MaxCarryItems
-            ? lookedAt : selected != null ? selected : lookedAt;
+
+        // Stable focus while carrying: the card describes the SELECTED CD,
+        // not whichever shelf case happens to be under the crosshair.
+        PhysicalInteractable shown = selected != null ? selected : lookedAt;
         focusedMedia = shown != null ? shown.GetComponent<MediaItem>() : null;
+        // Holding Q deliberately inspects the aimed-at case if there is one.
+        inspectedMedia = lookedAt != null ? lookedAt.GetComponent<MediaItem>() : focusedMedia;
+        hoveredColumnCount = 0;
+        if (selected == null
+            && TryFindLookedAtShelfSlot(out ShelfSlot facing, out Vector3 point)
+            && facing.TryGetFrontCaseAt(point, out _, out int count))
+        {
+            hoveredColumnCount = count;
+        }
 
         if (keyboard == null || Cursor.lockState != CursorLockMode.Locked)
         {
@@ -257,7 +273,58 @@ public sealed class PlayerInteraction : MonoBehaviour
             closestDistance = hit.distance;
         }
 
-        return closest;
+        if (closest != null)
+        {
+            return closest;
+        }
+
+        // Tiny real-sized cases need forgiving aim. Only use a narrow sphere
+        // assist when there was no direct CD hit, and never reach through
+        // opaque geometry that the straight crosshair ray hit first.
+        float blockingDistance = interactionRange;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = hits[i];
+            if (hit.collider.GetComponentInParent<PhysicalInteractable>() == null)
+            {
+                blockingDistance = Mathf.Min(blockingDistance, hit.distance + 0.04f);
+            }
+        }
+
+        int nearbyHits = Physics.SphereCastNonAlloc(ray, 0.045f, hits,
+            Mathf.Min(interactionRange, blockingDistance), interactionLayers,
+            QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < nearbyHits; i++)
+        {
+            RaycastHit hit = hits[i];
+            PhysicalInteractable candidate =
+                hit.collider.GetComponentInParent<PhysicalInteractable>();
+            if (candidate == null || candidate.IsHeld || hit.distance >= closestDistance)
+            {
+                continue;
+            }
+
+            closest = candidate;
+            closestDistance = hit.distance;
+        }
+
+        if (closest != null)
+        {
+            return closest;
+        }
+
+        // If a thin browsing lip obscures the actual front case, use the
+        // non-solid shelf targeting volume to find that column's front copy.
+        // Do not redirect collection when the player is already carrying stock.
+        if (carriedItems.Count == 0
+            && TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 worldPoint)
+            && shelf.TryGetFrontCaseAt(worldPoint, out PhysicalInteractable front, out _)
+            && front != null && !front.IsHeld)
+        {
+            return front;
+        }
+
+        return null;
     }
 
     private bool TryFindLookedAtShelfSlot(out ShelfSlot closestShelfSlot,
@@ -379,7 +446,7 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         Color previous = GUI.color;
         GUI.color = focusedMedia != null
-            ? new Color(0.90f, 0.94f, 0.78f, 0.95f)
+            ? new Color(0.88f, 0.93f, 0.79f, 0.95f)
             : new Color(0.87f, 0.90f, 0.84f, 0.65f);
         GUI.DrawTexture(new Rect(Screen.width * 0.5f - 2f,
             Screen.height * 0.5f - 2f, 4f, 4f), Texture2D.whiteTexture);
@@ -390,38 +457,123 @@ public sealed class PlayerInteraction : MonoBehaviour
             DrawStackPanel();
         }
 
-        AlbumDefinition album =
-            focusedMedia != null ? focusedMedia.AlbumDefinition : null;
-        if (album == null)
+        if (focusedMedia != null && focusedMedia.AlbumDefinition != null)
+        {
+            DrawAlbumCard(focusedMedia);
+        }
+
+        // Hold Q to view the original cover at a readable size. The player
+        // can still navigate the shop with a quick glance at the smaller card.
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.qKey.isPressed
+            && inspectedMedia != null && inspectedMedia.AlbumDefinition != null)
+        {
+            DrawLargeInspection(inspectedMedia);
+        }
+    }
+
+    private void DrawAlbumCard(MediaItem media)
+    {
+        AlbumDefinition album = media.AlbumDefinition;
+        bool compact = Screen.height < 510f;
+        float height = compact ? 162f : 214f;
+        float width = Mathf.Min(Screen.width - 22f,
+            Mathf.Min(510f, Mathf.Max(340f, Screen.width * 0.47f)));
+        float x = Screen.width - width - 12f;
+        float y = Mathf.Max(8f, Screen.height - height - 10f);
+
+        DrawPanel(new Rect(x, y, width, height),
+            new Color(0.065f, 0.12f, 0.15f, 0.97f));
+        float coverSize = height - 24f;
+        DrawCoverPreview(media, new Rect(x + 12f, y + 12f,
+            coverSize, coverSize));
+
+        float textX = x + coverSize + 24f;
+        float textWidth = Mathf.Max(90f, width - coverSize - 36f);
+        bool selected = SelectedItem != null
+            && media == SelectedItem.GetComponent<MediaItem>();
+
+        string category = album.Genre.ToUpperInvariant()
+            + (selected ? "  /  SELECTED CD" : "  /  BROWSING");
+        GUI.Label(new Rect(textX, y + 10f, textWidth, 25f),
+            category, albumDetailStyle);
+
+        GUI.Label(new Rect(textX, y + 37f, textWidth,
+            compact ? 40f : 57f), album.ArtistName, albumArtistStyle);
+        GUI.Label(new Rect(textX, y + (compact ? 85f : 99f),
+            textWidth, compact ? 37f : 57f),
+            album.AlbumTitle, albumTitleStyle);
+
+        if (!selected && hoveredColumnCount > 1)
+        {
+            GUI.Label(new Rect(textX, y + height - 51f, textWidth, 22f),
+                hoveredColumnCount + " CASES IN THIS BIN",
+                albumDetailStyle);
+        }
+
+        string controls = selected
+            ? "WHEEL choose  •  E shelve  •  G drop"
+            : "E collect  •  WHEEL flip rack";
+        GUI.Label(new Rect(textX, y + height - 29f, textWidth, 21f),
+            FitText(controls, albumDetailStyle, textWidth),
+            albumDetailStyle);
+
+        GUI.Label(new Rect(x + 12f, y + height - 11f, coverSize, 18f),
+            "HOLD Q TO INSPECT", albumDetailStyle);
+    }
+
+    private void DrawLargeInspection(MediaItem media)
+    {
+        AlbumDefinition album = media.AlbumDefinition;
+
+        // Temporary enlarged information card. This never picks up an item,
+        // pauses the world or modifies a shelf/save.
+        DrawPanel(new Rect(0f, 0f, Screen.width, Screen.height),
+            new Color(0.02f, 0.055f, 0.07f, 0.86f));
+
+        float width = Mathf.Min(Screen.width - 30f, 740f);
+        float height = Mathf.Min(Screen.height - 24f, 455f);
+        float x = (Screen.width - width) * 0.5f;
+        float y = (Screen.height - height) * 0.5f;
+        DrawPanel(new Rect(x, y, width, height),
+            new Color(0.08f, 0.15f, 0.17f, 0.98f));
+
+        float artSize = Mathf.Min(height - 36f, width * 0.56f);
+        DrawCoverPreview(media,
+            new Rect(x + 18f, y + 18f, artSize, artSize));
+
+        float textX = x + artSize + 32f;
+        float textWidth = Mathf.Max(75f, width - artSize - 48f);
+        GUI.Label(new Rect(textX, y + 20f, textWidth, 28f),
+            album.Genre.ToUpperInvariant() + "  /  CD",
+            inspectHeaderStyle);
+        GUI.Label(new Rect(textX, y + 60f, textWidth,
+            Mathf.Max(55f, height * 0.31f)), album.ArtistName,
+            inspectArtistStyle);
+        GUI.Label(new Rect(textX, y + height * 0.47f, textWidth,
+            Mathf.Max(55f, height * 0.30f)), album.AlbumTitle,
+            inspectAlbumStyle);
+        GUI.Label(new Rect(textX, y + height - 45f, textWidth, 27f),
+            "RELEASE Q TO RETURN", inspectHeaderStyle);
+    }
+
+    private static void DrawCoverPreview(MediaItem media, Rect bounds)
+    {
+        DrawPanel(bounds, new Color(0.24f, 0.27f, 0.29f, 1f));
+        AlbumCoverArt cover = media.GetComponent<AlbumCoverArt>();
+        Texture2D texture = cover != null ? cover.CoverTexture : null;
+        if (texture == null)
         {
             return;
         }
 
-        float width = Mathf.Min(470f, Screen.width * 0.48f);
-        float x = Mathf.Max(8f, Screen.width - width - 12f);
-        float y = Mathf.Max(8f, Screen.height - 142f);
-        DrawPanel(new Rect(x, y, width, 128f),
-            new Color(0.07f, 0.13f, 0.16f, 0.96f));
-
-        float textWidth = width - 26f;
-        GUI.Label(new Rect(x + 14f, y + 9f, textWidth, 22f),
-            album.Genre.ToUpperInvariant(), albumDetailStyle);
-        GUI.Label(new Rect(x + 14f, y + 31f, textWidth, 28f),
-            FitText(album.ArtistName, albumArtistStyle, textWidth),
-            albumArtistStyle);
-        GUI.Label(new Rect(x + 14f, y + 59f, textWidth, 29f),
-            FitText(album.AlbumTitle, albumTitleStyle, textWidth),
-            albumTitleStyle);
-
-        bool showingPickupTarget = !carriedItems.Contains(
-            focusedMedia.GetComponent<PhysicalInteractable>());
-        string hint = showingPickupTarget
-            ? carriedItems.Count == 0
-                ? "E  COLLECT CD   •   WHEEL  FLIP RACK COPIES"
-                : "E  COLLECT CD  (" + carriedItems.Count + "/10)"
-            : "E  SHELVE   •   G  DROP   •   WHEEL  SELECT";
-        GUI.Label(new Rect(x + 14f, y + 99f, textWidth, 22f),
-            FitText(hint, albumDetailStyle, textWidth), albumDetailStyle);
+        // The cube front-face UV is 180 degrees from GUI texture coordinates.
+        // The artwork was rotated for the physical case in the previous fix;
+        // counter-rotate the shared texture when drawing it in screen-space.
+        Matrix4x4 previous = GUI.matrix;
+        GUIUtility.RotateAroundPivot(180f, bounds.center);
+        GUI.DrawTexture(bounds, texture, ScaleMode.ScaleToFit);
+        GUI.matrix = previous;
     }
 
     private void DrawStackPanel()
@@ -572,6 +724,24 @@ public sealed class PlayerInteraction : MonoBehaviour
         {
             fontStyle = FontStyle.Bold,
             normal = { textColor = Color.white }
+        };
+        albumArtistStyle.wordWrap = true;
+        albumTitleStyle.wordWrap = true;
+
+        inspectHeaderStyle = new GUIStyle(albumDetailStyle)
+        {
+            fontSize = 15,
+            wordWrap = true
+        };
+        inspectArtistStyle = new GUIStyle(albumArtistStyle)
+        {
+            fontSize = 25,
+            wordWrap = true
+        };
+        inspectAlbumStyle = new GUIStyle(albumTitleStyle)
+        {
+            fontSize = 20,
+            wordWrap = true
         };
     }
 }
