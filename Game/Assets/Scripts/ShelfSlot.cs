@@ -16,6 +16,9 @@ public sealed class ShelfSlot : MonoBehaviour
     private const float ShelfDepthOffset = 0.38f;
     private const float HintFrontZ = -0.12f;
 
+    // Small physical cases should sit close together, not 11 cm apart.
+    private const float JewelCaseSpineSpacing = 0.024f;
+
     private readonly List<PhysicalInteractable> placedItems = new();
     private GameObject placementHint;
 
@@ -71,6 +74,11 @@ public sealed class ShelfSlot : MonoBehaviour
         artistRangeStart = firstArtistInitial;
         artistRangeEnd = lastArtistInitial;
         placedItems.Clear();
+    }
+
+    public void ConfigureJewelCaseSpacing()
+    {
+        itemSpacing = JewelCaseSpineSpacing;
     }
 
     public bool TryPlace(PhysicalInteractable item)
@@ -230,8 +238,8 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         placementHint = new GameObject("Placement Hint");
-        CreateHintCube("Placement Hint Spine", new Vector3(0f, 0f, 0f), new Vector3(0.09f, 0.76f, 0.055f), CreateHintMaterial(new Color(0.45f, 0.73f, 0.86f, 1f)));
-        CreateHintCube("Placement Hint Top Tab", new Vector3(0f, 0.42f, -0.015f), new Vector3(0.22f, 0.065f, 0.1f), CreateHintMaterial(new Color(0.82f, 0.88f, 0.9f, 1f)));
+        CreateHintCube("Placement Hint Spine", new Vector3(0f, 0f, 0f), new Vector3(0.025f, 0.16f, 0.045f), CreateHintMaterial(new Color(0.45f, 0.73f, 0.86f, 1f)));
+        CreateHintCube("Placement Hint Top Tab", new Vector3(0f, 0.095f, -0.015f), new Vector3(0.065f, 0.018f, 0.055f), CreateHintMaterial(new Color(0.82f, 0.88f, 0.9f, 1f)));
         placementHint.SetActive(false);
     }
 

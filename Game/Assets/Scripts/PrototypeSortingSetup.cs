@@ -9,6 +9,11 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
     [SerializeField] private PhysicalInteractable cdTemplate;
     [SerializeField] private Transform shelfTemplate;
 
+    // The original greybox case measured 78 cm across. This puts it close to a
+    // real jewel case (17.2 x 13.6 cm) while keeping it slightly easy to target.
+    public const float JewelCaseScale = 0.22f;
+    public const float PileLayerSpacing = 0.020f;
+
     private static readonly AlbumSeed[] AdditionalAlbums =
     {
         new("aerial-broadcast-frequency", "Aerial Broadcast", "Frequency of Rain", "Rock"),
@@ -66,18 +71,18 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
     // The scene furniture is fixed: display table, two low bins, and a checkout.
     private static readonly PileSpot[] Piles =
     {
-        new(-0.41f, 0.86f, 0.52f), new(0.41f, 0.86f, 0.52f),
-        new(-0.41f, 0.86f, 0.82f), new(0.41f, 0.86f, 0.82f),
-        new(-4.80f, 0.66f, 1.12f), new(-4.30f, 0.66f, 1.12f),
-        new(-4.80f, 0.66f, 1.38f), new(-4.30f, 0.66f, 1.38f),
-        new(4.20f, 0.66f, 0.75f), new(4.70f, 0.66f, 0.75f),
-        new(4.20f, 0.66f, 1.00f), new(4.70f, 0.66f, 1.00f),
-        new(4.15f, 0.96f, -2.65f), new(4.96f, 0.96f, -2.65f),
-        new(-3.10f, 0.04f, -2.65f), new(-2.15f, 0.04f, -2.75f),
-        new(-3.20f, 0.04f, -0.45f), new(-1.45f, 0.04f, -0.32f),
-        new(1.75f, 0.04f, -0.45f), new(2.65f, 0.04f, -2.55f),
-        new(2.40f, 0.04f, 1.40f), new(-2.75f, 0.04f, 1.55f),
-        new(0.70f, 0.04f, 2.20f), new(-0.82f, 0.04f, 2.25f)
+        new(-0.41f, 0.83f, 0.52f), new(0.41f, 0.83f, 0.52f),
+        new(-0.41f, 0.83f, 0.82f), new(0.41f, 0.83f, 0.82f),
+        new(-4.80f, 0.63f, 1.12f), new(-4.30f, 0.63f, 1.12f),
+        new(-4.80f, 0.63f, 1.38f), new(-4.30f, 0.63f, 1.38f),
+        new(4.20f, 0.63f, 0.75f), new(4.70f, 0.63f, 0.75f),
+        new(4.20f, 0.63f, 1.00f), new(4.70f, 0.63f, 1.00f),
+        new(4.15f, 0.93f, -2.65f), new(4.96f, 0.93f, -2.65f),
+        new(-3.10f, 0.015f, -2.65f), new(-2.15f, 0.015f, -2.75f),
+        new(-3.20f, 0.015f, -0.45f), new(-1.45f, 0.015f, -0.32f),
+        new(1.75f, 0.015f, -0.45f), new(2.65f, 0.015f, -2.55f),
+        new(2.40f, 0.015f, 1.40f), new(-2.75f, 0.015f, 1.55f),
+        new(0.70f, 0.015f, 2.20f), new(-0.82f, 0.015f, 2.25f)
     };
 
     public static event Action SetupCompleted;
@@ -147,7 +152,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                     int layer = looseCount / Piles.Length;
                     float yaw = ((looseCount * 37) % 23) - 11;
                     cd.transform.SetPositionAndRotation(
-                        new Vector3(spot.X, spot.Y + layer * 0.071f, spot.Z),
+                        new Vector3(spot.X, spot.Y + layer * PileLayerSpacing, spot.Z),
                         Quaternion.Euler(90f, yaw, 0f));
                     interactable.SettleLooseStock();
                     looseCount++;
@@ -263,6 +268,8 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                 label.Configure(seed.Genre, seed.Start + "-" + seed.End);
             }
 
+            slot.ConfigureJewelCaseSpacing();
+            PrototypeStoreLayout.StyleShelf(shelf, seed.Genre);
             slots.Add(slot);
         }
 
@@ -271,6 +278,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
 
     private static void ConfigureCd(GameObject cd, AlbumDefinition definition, string stableId)
     {
+        cd.transform.localScale = Vector3.one * JewelCaseScale;
         cd.name = definition.ArtistName + " - " + definition.AlbumTitle + " [" + stableId + "]";
         MediaItem media = cd.GetComponent<MediaItem>();
         if (media == null)
