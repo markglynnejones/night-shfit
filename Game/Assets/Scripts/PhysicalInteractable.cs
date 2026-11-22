@@ -15,6 +15,18 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     private void Awake()
     {
+        EnsureBody();
+    }
+
+    // Scene setup may place the original template during another object's Awake,
+    // before Unity has invoked this component's Awake.
+    private void EnsureBody()
+    {
+        if (body != null)
+        {
+            return;
+        }
+
         body = GetComponent<Rigidbody>();
         originalParent = transform.parent;
     }
@@ -32,6 +44,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void PickUp(Transform holdPoint)
     {
+        EnsureBody();
         if (holdPoint == null)
         {
             return;
@@ -62,6 +75,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void Drop()
     {
+        EnsureBody();
         if (!IsHeld)
         {
             return;
@@ -94,6 +108,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void PlaceOnShelf(Transform snapPoint, ShelfSlot shelfSlot, Vector3 localOffset, Vector3 localEulerAngles)
     {
+        EnsureBody();
         if (snapPoint == null)
         {
             return;
@@ -128,6 +143,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
     // rigidbodies would otherwise erupt when the prototype scene starts.
     public void SettleLooseStock()
     {
+        EnsureBody();
         if (IsHeld || currentShelfSlot != null)
         {
             return;
@@ -142,6 +158,7 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
     public void RestoreLooseState(Vector3 worldPosition, Quaternion worldRotation)
     {
+        EnsureBody();
         currentShelfSlot?.ClearIfHolding(this);
         currentShelfSlot = null;
         IsHeld = false;
