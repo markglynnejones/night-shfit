@@ -202,3 +202,11 @@ After the seven-row/four-deep and full shop pass, the player's feedback confirme
 ## 2026-11-22 — Crosshair aiming alignment
 
 After the latest local Unity screenshot, the player said cursor and aiming seemed offset. The previous shelf logic used the entry point on the broad invisible trigger as the intended case position, even though perspective makes that a different row from the visible cover. The pickup algorithm also used a wider-than-necessary spherecast. Use an exact centre-camera ray, prefer the nearest unoccluded CD, reduce fallback aim assist to 2 cm, resolve the closest physical rack facing and indicate the actual targeted action beside the dot. Keep carrying selection independent of what the cursor points at, and retain the existing shelves and save format.
+
+## 2026-11-22 — Preserve the CD position when picking cases
+
+The player reported two issues after the precise-crosshair pass: **removing a CD seems to shuffle other cases/rows**, and aiming worked on some seven-row shelf tiers but not others. Their intended interaction is physical CD browsing: four individual cases behind each facing; when the front case is removed, only the following cases in that facing move forward.
+
+The old `ShelfSlot` model used a single list index for both logical ordering and physical location, reflowing every subsequent item after a pickup. Replace this with persistent per-item physical slots (face number 0–62 plus 63 times the depth 0–3). Removal compacts only one facing; insertions push back only that facing; wheel flipping rotates only that facing. Maintain a separately ordered list for progress/save ordering. Add an optional fixed-slot field to version-2 save data with a layout marker; legacy files use their existing `shelfOrder` as the original physical slot to migrate without a reset.
+
+Aiming must compare visible CD faces across all racks instead of requiring a ray collision against the old oversized trigger. Preserve occlusion and leave geometry, catalogue, carry stack, physics and save version unchanged. Full Unity interaction testing remains required.

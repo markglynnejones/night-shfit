@@ -26,6 +26,8 @@ public static class VerticalSliceValidator
         int misfiled = 0;
         int reference = 0;
         int expandedPhysicalIds = 0;
+        Dictionary<ShelfSlot, HashSet<int>> occupiedPhysicalSlots = new();
+        Dictionary<ShelfSlot, Dictionary<int, int>> depthsByFacing = new();
 
         foreach (MediaItem item in stock)
         {
@@ -54,13 +56,46 @@ public static class VerticalSliceValidator
             {
                 loose++;
             }
-            else if (!physical.CurrentShelfSlot.CanAccept(item.AlbumDefinition))
-            {
-                misfiled++;
-            }
             else
             {
-                reference++;
+                ShelfSlot rack = physical.CurrentShelfSlot;
+                int position = rack.PhysicalSlotOf(physical);
+                if (position < 0 || position >= rack.Capacity)
+                {
+                    Debug.LogError("Invalid fixed physical slot for "
+                        + item.PhysicalItemId + " in " + rack.ShelfSectionId);
+                    failures++;
+                }
+                else
+                {
+                    if (!occupiedPhysicalSlots.TryGetValue(rack, out HashSet<int> positions))
+                    {
+                        positions = new HashSet<int>();
+                        occupiedPhysicalSlots.Add(rack, positions);
+                        depthsByFacing.Add(rack, new Dictionary<int, int>());
+                    }
+
+                    if (!positions.Add(position))
+                    {
+                        Debug.LogError("Two CDs occupy physical slot " + position
+                            + " in " + rack.ShelfSectionId);
+                        failures++;
+                    }
+
+                    int face = position % ShelfSlot.FacesPerLayer;
+                    Dictionary<int, int> depths = depthsByFacing[rack];
+                    depths.TryGetValue(face, out int occupiedCount);
+                    depths[face] = occupiedCount + 1;
+                }
+
+                if (!rack.CanAccept(item.AlbumDefinition))
+                {
+                    misfiled++;
+                }
+                else
+                {
+                    reference++;
+                }
             }
         }
 
@@ -82,6 +117,33 @@ public static class VerticalSliceValidator
             {
                 Debug.LogError("Missing or duplicate shelf ID: " + shelf.ShelfSectionId);
                 failures++;
+            }
+        }
+
+        // Every occupied facing must be a contiguous front-to-back stack.
+        // Removing a case should never leave gaps or shift another facing.
+        foreach (KeyValuePair<ShelfSlot, Dictionary<int, int>> rack in depthsByFacing)
+        {
+            HashSet<int> positions = occupiedPhysicalSlots[rack.Key];
+            foreach (KeyValuePair<int, int> column in rack.Value)
+            {
+                if (column.Value > ShelfSlot.MaxDepth)
+                {
+                    Debug.LogError("Too many CDs in facing " + column.Key
+                        + " of " + rack.Key.ShelfSectionId);
+                    failures++;
+                }
+
+                for (int depth = 0; depth < column.Value; depth++)
+                {
+                    int slot = column.Key + depth * ShelfSlot.FacesPerLayer;
+                    if (!positions.Contains(slot))
+                    {
+                        Debug.LogError("Gap within four-deep facing "
+                            + column.Key + " in " + rack.Key.ShelfSectionId);
+                        failures++;
+                    }
+                }
             }
         }
 

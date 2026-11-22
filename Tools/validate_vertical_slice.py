@@ -256,8 +256,9 @@ def main() -> None:
             "CD browsing deck geometry was not built")
     require("volume.isTrigger = true" in layout,
             "Browse tray placement volume must not collide with players")
-    require("QueryTriggerInteraction.Collide" in player,
-            "Shelving raycast must be able to see tray triggers")
+    require("shelf.TryGetAimedFacePoint(" in player
+            and "foreach (ShelfSlot shelf in shelfSlots)" in player,
+            "Shelf aiming must work without intersecting the giant trigger")
     require("slot.transform.localScale = new Vector3(2.01f, 0.91f, 1.17f)" in layout,
             "The bin placement area is missing")
     require("new Vector3(-0.26f, 1.66f, 0.375f)" in
@@ -319,10 +320,12 @@ def main() -> None:
     require("public bool TryGetAimedFacePoint(Ray sightLine" in shelf
             and "LocalOffsetForIndex(face)" in shelf,
             "Shelf aiming must resolve the visible CD facing")
-    require("closestShelfSlot.TryGetAimedFacePoint(ray, interactionRange," in player,
-            "Shelf interactions must target the actual visible face")
+    require("shelf.TryGetAimedFacePoint(" in player
+            and "Vector3.Cross(ray.direction, offset).sqrMagnitude" in player,
+            "Shelf interactions must target the visible facing under the centre ray")
     require("firstSolidDistance" in player
-            and "!hit.collider.transform.IsChildOf(targetRoot)" in player,
+            and "hit.collider.transform.IsChildOf(targetRoot)" in player
+            and "QueryTriggerInteraction.Ignore" in player,
             "Aiming must avoid stock behind solid obstructions")
     require("aimedItem = lookedAt;" in player
             and "DrawAimPrompt();" in player
@@ -334,6 +337,26 @@ def main() -> None:
             "Overlapping out-local 'point' declarations cause Unity C# CS0136")
     require("Q inspect" in hud,
             "The contextual inspection key must be documented in the HUD")
+
+    require("private readonly Dictionary<PhysicalInteractable, int> physicalSlots" in shelf
+            and "public int PhysicalSlotOf(" in shelf,
+            "Each CD needs an independent stable physical slot")
+    require("slot % FacesPerLayer == face && slot > removedSlot" in shelf
+            and "physicalSlots[other] = slot - FacesPerLayer;" in shelf,
+            "Removing a CD must compact ONLY that four-deep facing")
+    require("slot % FacesPerLayer == face" in shelf
+            and "physicalSlots[other] = slot + FacesPerLayer;" in shelf,
+            "Inserting a CD must push back ONLY that facing")
+    require("CountInFace(face) >= MaxDepth" in shelf,
+            "Each facing must enforce four physical copies maximum")
+    require("physicalSlots[stack[source]] = face + depth * FacesPerLayer;" in shelf,
+            "Wheel flipping must preserve neighbouring facings")
+    require("public bool RestorePlacedItem(PhysicalInteractable item, int physicalSlot = -1)" in shelf,
+            "Restoring a saved CD must preserve its assigned physical position")
+    require("shelfSlotLayoutVersion = 1" in save
+            and "physicalSlot = currentShelfSlot.PhysicalSlotOf(interactable)" in save
+            and "savedShelfLayoutVersion >= 1" in save,
+            "Old v2 saves must migrate while new v2 saves preserve per-column positions")
 
     require("stock.Length != 1388" in validator and "shelf.Capacity != 252" in validator,
             "Unity Editor validator must check the expanded shop")
@@ -358,6 +381,7 @@ def main() -> None:
     print("PASS: Ten-CD two-column UI, wheel selection and in-rack flipping, legible art, furniture and save migration.")
     print("PASS: Shared cover preview, Q inspect, rack front/copy count and small-CD aim assist.")
     print("PASS: Optical-centre CD pickup, physical rack-facing selection and targeted action prompts.")
+    print("PASS: Stable four-deep per-facing removal/insertion/flip and v2 save-slot migration.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":

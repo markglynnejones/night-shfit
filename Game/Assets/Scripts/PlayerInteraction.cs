@@ -346,23 +346,46 @@ public sealed class PlayerInteraction : MonoBehaviour
             return false;
         }
 
-        Ray ray = CentreScreenRay();
-        int hitCount = Physics.RaycastNonAlloc(ray, hits, interactionRange,
-            interactionLayers, QueryTriggerInteraction.Collide);
-
-        float closestDistance = float.MaxValue;
-        for (int i = 0; i < hitCount; i++)
+        if (shelfSlots.Length == 0)
         {
-            RaycastHit hit = hits[i];
-            ShelfSlot candidate = hit.collider.GetComponentInParent<ShelfSlot>();
-            if (candidate == null || hit.distance >= closestDistance
-                || !hit.collider.isTrigger)
+            shelfSlots = Object.FindObjectsByType<ShelfSlot>(FindObjectsInactive.Exclude);
+        }
+
+        Ray ray = CentreScreenRay();
+        float bestMissSquared = float.MaxValue;
+        float bestDistance = float.MaxValue;
+
+        // A thick shelf trigger is hit at a different height from the CD
+        // behind it. Some top/bottom rows never intersected it at all.
+        // Instead, test the real cover facings in every section against the
+        // precise centre-screen ray, regardless of the trigger's shape.
+        foreach (ShelfSlot shelf in shelfSlots)
+        {
+            if (shelf == null || !shelf.TryGetAimedFacePoint(
+                ray, interactionRange, out Vector3 facingPoint))
             {
                 continue;
             }
 
-            closestShelfSlot = candidate;
-            closestDistance = hit.distance;
+            Vector3 offset = facingPoint - ray.origin;
+            float distance = Vector3.Dot(offset, ray.direction);
+            if (distance <= 0f || distance > interactionRange)
+            {
+                continue;
+            }
+
+            float missSquared = Vector3.Cross(ray.direction, offset).sqrMagnitude;
+            if (missSquared > bestMissSquared + 0.0001f
+                || (Mathf.Abs(missSquared - bestMissSquared) <= 0.0001f
+                    && distance >= bestDistance))
+            {
+                continue;
+            }
+
+            closestShelfSlot = shelf;
+            closestHitPoint = facingPoint;
+            bestMissSquared = missSquared;
+            bestDistance = distance;
         }
 
         if (closestShelfSlot == null)
@@ -370,31 +393,34 @@ public sealed class PlayerInteraction : MonoBehaviour
             return false;
         }
 
-        // Respect walls, furniture and other solid obstructions in front of
-        // the target rack. The rack's own frame must not block its browsing
-        // volume, hence the shelf-parent check.
+        // Keep real occlusion. CDs and the frame belonging to the aimed rack
+        // are allowed, but a different rack, loose CD, table or wall in front
+        // of it blocks picking and shelving through that object.
+        int hitCount = Physics.RaycastNonAlloc(ray, hits, bestDistance,
+            interactionLayers, QueryTriggerInteraction.Ignore);
         Transform targetRoot = closestShelfSlot.transform.parent;
         for (int i = 0; i < hitCount; i++)
         {
             RaycastHit hit = hits[i];
-            if (hit.collider.isTrigger
-                || hit.distance + 0.01f >= closestDistance)
+            if (hit.collider == null || hit.distance + 0.015f >= bestDistance)
             {
                 continue;
             }
 
-            if (targetRoot == null
-                || !hit.collider.transform.IsChildOf(targetRoot))
+            PhysicalInteractable cd = hit.collider.GetComponentInParent<PhysicalInteractable>();
+            if (cd != null && cd.CurrentShelfSlot == closestShelfSlot)
             {
-                closestShelfSlot = null;
-                return false;
+                continue;
             }
-        }
 
-        if (!closestShelfSlot.TryGetAimedFacePoint(ray, interactionRange,
-            out closestHitPoint))
-        {
+            if (targetRoot != null
+                && hit.collider.transform.IsChildOf(targetRoot))
+            {
+                continue;
+            }
+
             closestShelfSlot = null;
+            closestHitPoint = Vector3.zero;
             return false;
         }
 

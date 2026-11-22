@@ -84,3 +84,20 @@ Unity playtest is required: the source checks do not verify physical aiming, ren
 - [ ] Test a normal Game window and maximised Game view, and check P/O save/reload does not change any shelving or inventory state.
 
 These are real Unity interaction tests; passing GitHub source checks alone does not verify the feel.
+
+## Follow-up: independent four-deep positions and every-row aim
+
+- [ ] Before beginning, back up `prototype-save.json` and its `.bak` file in the Unity persistent-data folder.
+- [ ] Stand at each of the **seven rows**, left, middle and right. Check the crosshair target consistently identifies the intended CD/slot. It must not depend on the invisible old trigger's entrance position.
+- [ ] With hands empty, pick up the visible front CD in a four-deep position. **Only that facing's next case comes forward**. Adjacent facings, shelves and rows must remain unmoved.
+- [ ] Pick up a case from a deeper facing after flipping through the stack. Remaining cases behind it advance in the same facing, without leaving gaps.
+- [ ] Aim at another facing, put down a CD while carrying one, and check that **only the chosen facing** pushes back its existing CDs. A position with four CDs must refuse a fifth and leave the held case in the hand stack.
+- [ ] Empty-handed scroll through a four-deep position. The stack should rotate without any cases from other positions moving.
+- [ ] Repeat these checks across Rock and Indie sections, including the highest and lowest rows.
+- [ ] Save with **P**, reload with **O**, and check the exact same CDs are in the same front-to-back position for each facing. The carrying stack must also survive.
+- [ ] Load an existing pre-change version-2 save and check that all previously arranged CDs remain and new stock is retained. The first load upgrades shelf positions without resetting progress.
+- [ ] While playing, select **Night Shift → Validate Running Vertical Slice**. It should find no duplicate occupied slots or holes in any four-deep facing.
+- [ ] Make sure a CD in another shelf or behind solid furniture cannot be collected or shelved through.
+- [ ] The colour/action prompt should match the CD, shelf or empty space directly under the centre dot.
+
+GitHub tests verify structural rules, but only these Unity tests can confirm the row-by-row feel and saved game behaviour.
