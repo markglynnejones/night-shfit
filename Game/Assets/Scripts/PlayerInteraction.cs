@@ -11,6 +11,10 @@ public sealed class PlayerInteraction : MonoBehaviour
     private PhysicalInteractable heldItem;
     private readonly RaycastHit[] hits = new RaycastHit[64];
     private ShelfSlot[] shelfSlots = new ShelfSlot[0];
+    private MediaItem focusedMedia;
+    private GUIStyle albumArtistStyle;
+    private GUIStyle albumTitleStyle;
+    private GUIStyle albumDetailStyle;
 
     private void Awake()
     {
@@ -41,6 +45,11 @@ public sealed class PlayerInteraction : MonoBehaviour
             RefreshPlacementHints();
         }
 
+        // Physical sleeves are now close to actual jewel-case size. Read the
+        // catalogue from a subtle inspect card instead of giant floating labels.
+        PhysicalInteractable focused = heldItem != null ? heldItem : FindLookedAtInteractable();
+        focusedMedia = focused != null ? focused.GetComponent<MediaItem>() : null;
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null || !keyboard.eKey.wasPressedThisFrame)
         {
@@ -61,6 +70,65 @@ public sealed class PlayerInteraction : MonoBehaviour
         TryPickUpLookedAtItem();
     }
 
+    private void OnGUI()
+    {
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            return;
+        }
+
+        // Gentle fixed crosshair: see which small physical case you are aiming at.
+        Color previousColor = GUI.color;
+        GUI.color = focusedMedia != null
+            ? new Color(0.87f, 0.91f, 0.70f, 0.9f)
+            : new Color(0.91f, 0.90f, 0.83f, 0.5f);
+        GUI.DrawTexture(new Rect(Screen.width * 0.5f - 2f, Screen.height * 0.5f - 2f,
+            4f, 4f), Texture2D.whiteTexture);
+        GUI.color = previousColor;
+
+        AlbumDefinition album = focusedMedia != null ? focusedMedia.AlbumDefinition : null;
+        if (album == null)
+        {
+            return;
+        }
+
+        if (albumArtistStyle == null)
+        {
+            albumArtistStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = new Color(0.97f, 0.94f, 0.87f) }
+            };
+            albumTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                normal = { textColor = Color.white }
+            };
+            albumDetailStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                normal = { textColor = new Color(0.79f, 0.84f, 0.81f) }
+            };
+        }
+
+        float x = Mathf.Max(12f, Screen.width - 366f);
+        float y = Mathf.Max(12f, Screen.height - 136f);
+        GUI.color = new Color(0.10f, 0.16f, 0.18f, 0.91f);
+        GUI.DrawTexture(new Rect(x, y, 350f, 119f), Texture2D.whiteTexture);
+        GUI.color = previousColor;
+
+        GUI.Label(new Rect(x + 14f, y + 9f, 322f, 22f), album.Genre.ToUpperInvariant(),
+            albumDetailStyle);
+        GUI.Label(new Rect(x + 14f, y + 31f, 322f, 29f), album.ArtistName,
+            albumArtistStyle);
+        GUI.Label(new Rect(x + 14f, y + 61f, 322f, 25f), album.AlbumTitle,
+            albumTitleStyle);
+        GUI.Label(new Rect(x + 14f, y + 93f, 322f, 19f),
+            heldItem != null ? "E  PLACE ON SHELF / DROP" : "E  PICK UP CD",
+            albumDetailStyle);
+    }
+
     private void TryPickUpLookedAtItem()
     {
         if (playerCamera == null || holdPoint == null)
@@ -76,6 +144,7 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         heldItem = interactable;
         heldItem.PickUp(holdPoint);
+        focusedMedia = heldItem.GetComponent<MediaItem>();
         shelfSlots = Object.FindObjectsByType<ShelfSlot>(FindObjectsInactive.Exclude);
         RefreshPlacementHints();
     }
@@ -119,6 +188,7 @@ public sealed class PlayerInteraction : MonoBehaviour
         if (shelfSlot.TryPlace(heldItem, placementPoint))
         {
             heldItem = null;
+            focusedMedia = null;
             HidePlacementHints();
         }
 
@@ -156,6 +226,7 @@ public sealed class PlayerInteraction : MonoBehaviour
     {
         heldItem.Drop();
         heldItem = null;
+        focusedMedia = null;
         HidePlacementHints();
     }
 
@@ -183,6 +254,7 @@ public sealed class PlayerInteraction : MonoBehaviour
     public void ClearHeldItemForPersistence()
     {
         heldItem = null;
+        focusedMedia = null;
         HidePlacementHints();
     }
 }
