@@ -330,7 +330,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                             fallbackSpot.Y + fallbackLayer * PileLayerSpacing,
                             fallbackSpot.Z);
                         Quaternion rotation = Quaternion.Euler(90f,
-                            ((ordinal * 29) % 29) - 14f, 0f);
+                            ((ordinal * 29) % 31) - 15f, 0f);
                         ExpansionPlacement record = new()
                         {
                             Id = id,
@@ -340,7 +340,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                         expansionDefaults.Add(id, record);
 
                         bool shouldBeLoose = ordinal % 6 == 0;
-                        bool correctReference = ordinal % 9 == 0;
+                        bool correctReference = ordinal % 5 == 0;
                         ShelfSlot desiredShelf = shouldBeLoose ? null
                             : correctReference ? FindCorrectShelf(album, shelves)
                             : FindIncorrectShelf(album, shelves, ordinal);
