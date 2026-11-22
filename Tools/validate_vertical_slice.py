@@ -269,6 +269,12 @@ def main() -> None:
             "Progress calculation should remain O(n log n) at store-scale")
     require("FinishDisplayFurniture()" in layout and "CreateShopAccents()" in layout,
             "Store furniture and atmosphere pass is missing")
+    require('CreateCube("Retail Shop Ceiling"' in layout
+            and "ShadowCastingMode.Off" in layout,
+            "The shop ceiling must close the old open-sky greybox without blocking light")
+    require('CreateCube("Display Table Lower Shelf"' in layout
+            and 'CreateCube("Left Browser Bin Base"' in layout,
+            "The original floating furniture still lacks physical supports")
     require("CreateRackPart(shelf, \"Browsing Deck \"" in layout,
             "All seven retail browse decks must be constructed")
     require("TextureFormat.RGBA32" in case_art
