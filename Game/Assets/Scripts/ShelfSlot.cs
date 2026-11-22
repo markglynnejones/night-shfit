@@ -349,6 +349,50 @@ public sealed class ShelfSlot : MonoBehaviour
         return Mathf.Min(tier * CoversPerTier + column, placedItems.Count);
     }
 
+    // Resolve the actual visible facing from the player's centre-screen ray,
+    // rather than the front surface of the oversized invisible trigger box.
+    // Perspective makes the hit on that box substantially lower/closer than
+    // the CD being aimed at, which previously chose the wrong row.
+    public bool TryGetAimedFacePoint(Ray sightLine, float maxDistance,
+        out Vector3 worldFacingPoint)
+    {
+        worldFacingPoint = Vector3.zero;
+        Transform reference = snapPoint != null ? snapPoint : transform;
+        int closestFace = -1;
+        const float maximumCentreMiss = 0.13f;
+        float bestMissSquared = maximumCentreMiss * maximumCentreMiss;
+
+        for (int face = 0; face < FacesPerLayer; face++)
+        {
+            Vector3 centre = reference.TransformPoint(LocalOffsetForIndex(face));
+            float distance = Vector3.Dot(centre - sightLine.origin,
+                sightLine.direction);
+            if (distance <= 0.12f || distance > maxDistance)
+            {
+                continue;
+            }
+
+            Vector3 onRay = sightLine.GetPoint(distance);
+            float missSquared = (onRay - centre).sqrMagnitude;
+            if (missSquared >= bestMissSquared)
+            {
+                continue;
+            }
+
+            bestMissSquared = missSquared;
+            closestFace = face;
+        }
+
+        if (closestFace < 0)
+        {
+            return false;
+        }
+
+        worldFacingPoint = reference.TransformPoint(
+            LocalOffsetForIndex(closestFace));
+        return true;
+    }
+
     // Let the interaction UI identify the front-facing CD and show how
     // many distinct physical copies are behind that cover. This read-only
     // query never alters the authored ordering or persistent state.

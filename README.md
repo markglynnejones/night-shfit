@@ -61,3 +61,9 @@ Physical CD cases remain their realistic size. The bottom-right focus card now s
 A narrow aim-assist target helps with tiny jewel cases; if the front case is obscured by a browse-bin lip, the player can still select it through the rack's existing non-colliding aim region. A populated rack can now report how many physical cases occupy the browsed column. Empty-handed mouse-wheel flipping, ten-CD carrying, wrong-genre shelving and version-2 saves are unchanged.
 
 The cover in the on-screen UI is taken from the existing **shared 256px texture** per album, corrected for the case mesh's 180-degree UV orientation. The preview does not create new textures for each individual stock copy.
+
+## Crosshair alignment and rack aiming
+
+The player now uses the camera's **exact viewport-centre ray** for CD pickup, rack placement and browsing. A direct pickup respects the closest solid collider, with only 2 cm of fallback aim forgiveness. Rack interactions map the visible case nearest the centre ray, not the misleading entry point of the large invisible placement trigger. Obstacles must be visible rather than allowing interaction with stock hidden behind walls or unrelated furniture.
+
+The crosshair is green when aimed at a CD, pale blue for a rack and white when there is no available interaction. A compact near-centre label names the pickup action so the bottom-right **selected carried album** information is no longer mistaken for the target currently under the crosshair. No changes to case scale, shelves, physical behaviour, or saves.
