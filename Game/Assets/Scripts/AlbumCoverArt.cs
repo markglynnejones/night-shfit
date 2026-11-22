@@ -12,10 +12,15 @@ public sealed class AlbumCoverArt : MonoBehaviour
     {
         public Material Cover;
         public Material Spine;
+        public Texture2D Texture;
     }
 
     private static readonly Dictionary<string, Sleeve> Cached = new();
     private const int Size = 256;
+
+    // Use the same shared art for a large, readable inspection preview.
+    // No duplicate render textures or per-copy material allocations.
+    public Texture2D CoverTexture { get; private set; }
 
     // Each letter is encoded as seven rows of five dots. This tiny bitmap
     // alphabet renders consistent, high-contrast lettering on any platform.
@@ -88,6 +93,7 @@ public sealed class AlbumCoverArt : MonoBehaviour
             Cached.Add(album.CatalogueId, sleeve);
         }
 
+        CoverTexture = sleeve.Texture;
         Transform cover = transform.Find("Placeholder Cover Card");
         Transform spine = transform.Find("Placeholder Spine Strip");
 
@@ -217,7 +223,7 @@ public sealed class AlbumCoverArt : MonoBehaviour
         Material spine = new(shader) { name = "Spine " + album.CatalogueId };
         if (spine.HasProperty("_BaseColor")) spine.SetColor("_BaseColor", mid);
 
-        return new Sleeve { Cover = cover, Spine = spine };
+        return new Sleeve { Cover = cover, Spine = spine, Texture = texture };
     }
 
     private static List<string> Wrap(string value, int maxCharacters, int maxLines)
