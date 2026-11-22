@@ -15,6 +15,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
     private const string TemporarySaveExtension = ".tmp";
     private const string LooseState = "Loose";
     private const string ShelvedState = "Shelved";
+    private const string CurrentVisualScaleSignature = "jewel-cases-0.22";
 
     [SerializeField] private float autosaveDebounceSeconds = 2f;
     [SerializeField] private float periodicAutosaveSeconds = 120f;
@@ -161,7 +162,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         PrototypeSaveData saveData = new()
         {
             version = SaveFormatVersion,
-            player = CapturePlayer()
+            player = CapturePlayer(),
+            visualScaleSignature = CurrentVisualScaleSignature
         };
 
         MediaItem[] mediaItems = UnityObject.FindObjectsByType<MediaItem>(FindObjectsInactive.Exclude);
@@ -256,6 +258,16 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         try
         {
             EnsureSaveLists(saveData);
+            if (!string.Equals(saveData.visualScaleSignature,
+                CurrentVisualScaleSignature, StringComparison.Ordinal))
+            {
+                // Older v2 saves contain the 78 cm prototype cases stacked at
+                // 7.1 cm intervals. Keep each case's ID and X/Z location while
+                // lowering it onto the same support at the new case thickness.
+                UpgradeLegacyLooseCaseHeights(saveData.looseMediaItems);
+                Debug.Log("Adjusted legacy CD stack heights for smaller jewel cases.");
+            }
+
             ClearHeldItems();
 
             Dictionary<string, MediaItem> mediaItemsById = BuildMediaItemsById();
@@ -524,6 +536,54 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         }
     }
 
+    private static void UpgradeLegacyLooseCaseHeights(
+        List<LooseMediaItemSaveData> looseItems)
+    {
+        foreach (LooseMediaItemSaveData item in looseItems)
+        {
+            if (item == null)
+            {
+                continue;
+            }
+
+            Vector3 position = item.position;
+            float castHeight = Mathf.Max(3f, position.y + 0.5f);
+            RaycastHit[] hits = Physics.RaycastAll(
+                new Vector3(position.x, castHeight, position.z),
+                Vector3.down, 10f, Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float supportHeight = float.NegativeInfinity;
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider == null || hit.point.y > position.y + 0.06f)
+                {
+                    continue;
+                }
+
+                // Stock piles must not support themselves during migration.
+                if (hit.collider.GetComponentInParent<MediaItem>() != null
+                    || hit.collider.GetComponentInParent<ShelfSlot>() != null)
+                {
+                    continue;
+                }
+
+                supportHeight = Mathf.Max(supportHeight, hit.point.y);
+            }
+
+            if (float.IsNegativeInfinity(supportHeight))
+            {
+                continue;
+            }
+
+            float legacyLayers = Mathf.Max(0f,
+                (position.y - supportHeight - 0.04f) / 0.071f);
+            position.y = supportHeight + 0.011f
+                + legacyLayers * PrototypeSortingSetup.PileLayerSpacing;
+            item.position = position;
+        }
+    }
+
     private static void RestoreLooseItems(
         List<LooseMediaItemSaveData> looseItems,
         Dictionary<string, MediaItem> mediaItemsById,
@@ -639,6 +699,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
     private sealed class PrototypeSaveData
     {
         public int version = SaveFormatVersion;
+        public string visualScaleSignature = string.Empty;
         public PlayerSaveData player = new();
         public List<LooseMediaItemSaveData> looseMediaItems = new();
         public List<ShelvedMediaItemSaveData> shelvedMediaItems = new();
