@@ -8,8 +8,12 @@ public sealed class ShelfSectionLabel : MonoBehaviour
 
     private void Start()
     {
-        CreateLabel("Shelf Genre Text", genre, new Vector3(0f, 1.31f, -0.455f), SizeForText(genre, 0.043f, 5));
-        CreateLabel("Shelf Artist Range Text", artistRange, new Vector3(-0.52f, 0.96f, -0.455f), SizeForText(artistRange, 0.033f, 3));
+        // Billboard behind the three browsing tiers; keep the genre and A-Z
+        // range in a single eye-readable header, not on an empty bookcase.
+        CreateLabel("Shelf Genre Text", genre,
+            new Vector3(-0.35f, 1.38f, 0.268f), SizeForText(genre, 0.047f, 5));
+        CreateLabel("Shelf Artist Range Text", artistRange,
+            new Vector3(0.69f, 1.38f, 0.241f), SizeForText(artistRange, 0.043f, 3));
     }
 
     public void Configure(string newGenre, string newArtistRange)

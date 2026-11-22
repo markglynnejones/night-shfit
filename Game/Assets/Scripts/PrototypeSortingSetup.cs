@@ -142,7 +142,7 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
                 {
                     correctlyShelved.Add(interactable);
                 }
-                else if (physicalId % 8 == 0) // Some stock misfiled on the wrong shelves.
+                else if (physicalId % 2 == 0) // Busy bins: plenty of wrongly shelved stock after the sale.
                 {
                     misfiled.Add(interactable);
                 }
