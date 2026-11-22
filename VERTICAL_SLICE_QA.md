@@ -77,3 +77,21 @@ Fix critical failures and repeat the test **before** scaling to more music or ot
 - [ ] Play for 5–10 minutes and note any cases now too fiddly to pick up, shelf gaps, or unreadable signs.
 
 If the new dimensions are too small to target reliably, adjust the interaction affordance or spacing rather than reverting to giant physical CDs.
+
+
+## Flip-through browsing rack visual acceptance
+
+Photo reference: real UK high-street music store CD flip bins (roughly mid-2000s): inclined tiers of front covers, narrow retaining lips, section dividers and large genre signs. These are NOT oversized upright bookcases.
+
+- [ ] Each of the 11 stock bays looks like a shallow waist-height browsing bin with three visible rows, not a tall empty display cabinet
+- [ ] A CD is nearly real jewel-case size (17.2 × 13.6 cm) and displays its FRONT COVER tilted towards the customer, not an edge-on spine
+- [ ] Six cases fit across a row and three staggered rows are available: 18 physical copies per section
+- [ ] Rock uses a burgundy sign, Indie uses petrol/teal, and alphabet ranges remain visible beside each sign
+- [ ] Front lips and divider tabs imply real record-store browsing racks, without blocking art or obscuring the interaction target
+- [ ] The player can pick up one case in a visually crowded bin (aim at its face and press E), move it, and put it between two others
+- [ ] An intentionally wrong genre/artist placement succeeds, remains in player-authored order and survives P/O save and reload
+- [ ] The shelving target is a non-colliding trigger, so the player does not bump into invisible interaction boxes
+- [ ] When starting with a fresh save, there are 20 correctly filed cases, 60 intentionally misfiled cases, and 60 loose cases. Existing saves are intentionally NOT reset.
+- [ ] Check a 5–10 minute playtest for cases that clip through trays, rows that overlap the main sign, too-small album covers or interaction difficulty
+
+**Known limitation:** this is a first geometry/layout pass with procedurally coloured sleeves. The reference photo is a visual target for shelving construction, not a licensed texture asset to reproduce.

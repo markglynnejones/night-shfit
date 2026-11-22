@@ -37,3 +37,12 @@ The scale/readability pass keeps the version 2 save schema. Saved CDs on shelves
 This branch is a feature-complete **candidate** for the first 30–60-minute playtest. Source changes have been committed, **but local Unity Editor compilation, scene play, save recovery and a timed playtest remain unverified**. The milestone is not accepted until the QA gates pass.
 
 Long-term ambitions (not in this prototype): more genres, DVDs, games, hundreds of distinct titles and eventually 2,000–3,000+ physical items. Do not scale before evaluating this loop.
+
+
+## CD flip-bin browsing pass
+
+The original tall empty display shelves have been replaced in code with shallow three-tier browsing bins, closer to an early-2000s UK high-street CD shop. Cases face outward at a gentle angle and the genre/range signs stand above them. Each section keeps its original persistent ID and capacity (18 CDs) and now has six cover-facing positions in each of three staggered rows. Aim at a bin and press **E** to place, or at a particular cover to pick up.
+
+**New-save starting stock:** 20 correctly shelved reference cases, 60 intentionally misfiled cases and 60 loose cases. This makes the browsing racks feel like a busy shop despite the post-sale mess. Existing local save files remain authoritative; their stock counts and shelf ordering are not changed. If you want to see the new starting layout, back up your "prototype-save.json" and ".bak" before moving them out of the save directory while Unity is closed.
+
+This is a source-level implementation awaiting the in-Editor visual and interaction tests above; it has not been accepted as final shelf geometry.
