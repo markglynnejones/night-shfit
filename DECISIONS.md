@@ -198,3 +198,7 @@ This is an implementation candidate. Unity Editor compilation, frame rate, physi
 ## 2026-11-22 — Readable CD browsing and inspection
 
 After the seven-row/four-deep and full shop pass, the player's feedback confirmed the racks and frame rate are good. The next priority is to **identify and browse CDs more easily without enlarging the physical cases**. Use the same cached album cover texture for a clear bottom-right card, a held-Q larger inspection screen, a stable selected-CD card while carrying, narrow aim assist for small cases, and a read-only count of cases behind a browsed rack facing. Keep E, Shift+E, G, wheel carrying, player-authored shelf order and version-2 save persistence unchanged. Q is a temporary view rather than a separate inventory or pause mechanic.
+
+## 2026-11-22 — Crosshair aiming alignment
+
+After the latest local Unity screenshot, the player said cursor and aiming seemed offset. The previous shelf logic used the entry point on the broad invisible trigger as the intended case position, even though perspective makes that a different row from the visible cover. The pickup algorithm also used a wider-than-necessary spherecast. Use an exact centre-camera ray, prefer the nearest unoccluded CD, reduce fallback aim assist to 2 cm, resolve the closest physical rack facing and indicate the actual targeted action beside the dot. Keep carrying selection independent of what the cursor points at, and retain the existing shelves and save format.
