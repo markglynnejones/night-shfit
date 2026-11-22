@@ -25,6 +25,7 @@ public static class VerticalSliceValidator
         int loose = 0;
         int misfiled = 0;
         int reference = 0;
+        int expandedPhysicalIds = 0;
 
         foreach (MediaItem item in stock)
         {
@@ -38,6 +39,11 @@ public static class VerticalSliceValidator
             }
 
             catalogueIds.Add(item.AlbumDefinition.CatalogueId);
+            if (item.PhysicalItemId.StartsWith("expanded-",
+                System.StringComparison.Ordinal))
+            {
+                expandedPhysicalIds++;
+            }
             PhysicalInteractable physical = item.GetComponent<PhysicalInteractable>();
             if (physical == null)
             {
@@ -62,6 +68,12 @@ public static class VerticalSliceValidator
         int correctlyOrganised = 0;
         foreach (ShelfSlot shelf in shelves)
         {
+            if (shelf.Capacity != 252)
+            {
+                Debug.LogError("Expected four-deep capacity of 252 for "
+                    + shelf.ShelfSectionId + ", found " + shelf.Capacity);
+                failures++;
+            }
             shelved += shelf.ItemCount;
             correctlyOrganised += shelf.CountCorrectlyOrganisedItems();
 
@@ -73,10 +85,12 @@ public static class VerticalSliceValidator
             }
         }
 
-        if (stock.Length != 140 || catalogueIds.Count != 40 || shelves.Length != 11)
+        if (stock.Length != 1388 || catalogueIds.Count != 248
+            || shelves.Length != 11 || expandedPhysicalIds != 1248)
         {
-            Debug.LogError("Expected 140 CDs / 40 albums / 11 shelves, found "
-                + stock.Length + " / " + catalogueIds.Count + " / " + shelves.Length);
+            Debug.LogError("Expected 1388 CDs / 248 albums / 11 shelves, found "
+                + stock.Length + " / " + catalogueIds.Count + " / "
+                + shelves.Length + " (expanded copies " + expandedPhysicalIds + ")");
             failures++;
         }
 
@@ -94,7 +108,8 @@ public static class VerticalSliceValidator
 
         if (failures == 0)
         {
-            Debug.Log("PASS: 40 album definitions, 140 unique cases, 11 shelf IDs. "
+            Debug.Log("PASS: 248 album definitions, 1388 unique cases, "
+                + "11 seven-row, four-deep shelf IDs. "
                 + loose + " loose, " + misfiled + " wrong-genre/range cases, "
                 + reference + " in the right category/range, "
                 + correctlyOrganised + " correctly ordered.");
