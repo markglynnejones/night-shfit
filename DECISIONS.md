@@ -178,3 +178,8 @@ First in-Editor playtest: the player found the CD physics enjoyable but felt the
 The first in-game screenshot showed oversized empty upright shelves, even after correcting CD size. The user's visual reference is a UK high-street CD shop with sloped, densely packed face-out browsing trays, front lips and section-divider tabs. Prefer this recognisable retail geometry to bookcase shelves.
 
 Replace each existing bay's visual geometry but **preserve stable shelf IDs and authored order**. Use 3 tiers × 9 cover-facing positions, 27 copies per bay; allow incorrect shelving; keep the interaction hit volume broad and non-colliding. Improve only the fresh starting layout to 20 correct, 60 misfiled and 60 loose cases so bins look less barren. Do not forcibly replace an existing player's save.
+
+
+## 2026-11-22 - Carry up to ten CDs; scroll to choose
+
+Player asked to hold up to 10 physical CD copies and confirmed that the **mouse wheel should scroll through the carried pile**. The implementation keeps individual copy IDs, with a selected item index; E collects another case until the stack is full, E shelves the selected case when aimed at a rack, Shift+E forces shelving when another case is in front, and G drops the selected case. Add an on-screen ordered stack with selected artist/title, rather than making players infer titles from very small 3D artwork. Save and load the carried IDs and selection in backward-compatible v2 data, retaining the existing free-form shelving and case physics.

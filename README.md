@@ -46,3 +46,17 @@ The original tall empty display shelves have been replaced in code with shallow 
 **New-save starting stock:** 20 correctly shelved reference cases, 60 intentionally misfiled cases and 60 loose cases. This makes the browsing racks feel like a busy shop despite the post-sale mess. Existing local save files remain authoritative; their stock counts and shelf ordering are not changed. If you want to see the new starting layout, back up your "prototype-save.json" and ".bak" before moving them out of the save directory while Unity is closed.
 
 This is a source-level implementation awaiting the in-Editor visual and interaction tests above; it has not been accepted as final shelf geometry.
+
+
+## Carry up to 10 CDs at once
+
+The player can now hold **ten individual physical CD cases** in one visible hand stack. Each CD keeps its physical ID and album definition.
+
+- **E** while looking at another case: collect it into your stack, up to 10.
+- **Mouse wheel**: browse the held albums in either direction, with the current artist/title clearly highlighted in the top-right stack list and displayed in the larger bottom-right album card.
+- **E** while aiming at a free rack area: insert only the selected CD; the other held cases remain.
+- **Shift+E** while aiming at a rack: shelve the selected CD even if the crosshair also intersects an existing case.
+- **G**: drop only the selected case, using the game's regular drop physics.
+- **P** save, **O** reload: all carried physical IDs, their ordering and the selected CD are restored. Existing v2 save files without a carry stack remain loadable.
+
+The goal is to let players scoop up a handful of CDs and shelve them together without making the tedious trip back to the floor after every copy. See the ten-CD acceptance checks in VERTICAL_SLICE_QA.md.

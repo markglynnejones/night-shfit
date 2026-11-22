@@ -95,3 +95,22 @@ Photo reference: real UK high-street music store CD flip bins (roughly mid-2000s
 - [ ] Check a 5–10 minute playtest for cases that clip through trays, rows that overlap the main sign, too-small album covers or interaction difficulty
 
 **Known limitation:** this is a first geometry/layout pass with procedurally coloured sleeves. The reference photo is a visual target for shelving construction, not a licensed texture asset to reproduce.
+
+
+## Carry stack acceptance (ten physical CDs)
+
+- [ ] While empty-handed, aim at a CD and press E. Carry counter becomes 1/10 and that artist/title is displayed.
+- [ ] Aim at nine other CDs and press E on each. Counter increases to 10/10, all ten remain individual items, and they are physically fanned in hand.
+- [ ] Aimed at an eleventh CD, E does NOT acquire an 11th item; no item is lost or duplicated.
+- [ ] Scroll mouse wheel in both directions. Selected index wraps around both ends. Large album panel and highlighted stack row track the correct album.
+- [ ] Aim at an empty part of a rack, press E. Exactly the selected case is shelved; count goes from 10 to 9. Other carried cases retain their relative order.
+- [ ] Aim at an existing CD on a rack; Shift+E shelves the selected carried case without accidentally collecting the case already in the rack.
+- [ ] A full shelf refuses the selected CD. The CD remains in hand.
+- [ ] G drops exactly the selected physical CD, still with its normal Rigidbody physics; the remaining stack stays carried.
+- [ ] From a mixture of correctly shelved, misfiled and loose stock, pick up 10 cases. P saves them; O reloads with the same 10 IDs, order and selected index.
+- [ ] Repeat the previous test by stopping/restarting Play mode (quit-save should preserve carried IDs).
+- [ ] An existing v2 save created before this feature still loads without carry-state exceptions.
+- [ ] Collect, scroll and shelve while walking. Other cases must not clip through the camera or block the interaction raycast.
+- [ ] At a short Game window height, the stack list and current-album details are readable and don't obscure the central aim dot.
+
+Static GitHub checks cannot verify Rigidbody or UI input. Please test these in Unity before accepting the milestone.

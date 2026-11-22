@@ -26,6 +26,8 @@ def main() -> None:
     scene = SCENE.read_text(encoding="utf-8")
     layout = (SCRIPTS / "PrototypeStoreLayout.cs").read_text(encoding="utf-8")
     player = (SCRIPTS / "PlayerInteraction.cs").read_text(encoding="utf-8")
+    physical = (SCRIPTS / "PhysicalInteractable.cs").read_text(encoding="utf-8")
+    hud = (SCRIPTS / "PrototypeOrganisationHud.cs").read_text(encoding="utf-8")
 
     # Pull only literal seed constructors out of the two purpose-built blocks.
     album_block = setup.split("AdditionalAlbums =", 1)[1].split("private static readonly ShelfSeed", 1)[0]
@@ -122,6 +124,38 @@ def main() -> None:
             and "UpgradeLegacyLooseCaseHeights" in save,
             "Old saves may not reposition their oversized piles")
 
+    # Ten-case carry stack: controls, selection, physical presentation and save
+    # identity must stay connected. These are source invariants, not Play tests.
+    require("public const int MaxCarryItems = 10;" in player,
+            "The carry capacity is not ten CDs")
+    require("mouse.scroll.ReadValue().y" in player and "SelectRelative(" in player,
+            "The mouse wheel must cycle through carried cases")
+    require("AddToStack(" in player and "TryPlaceSelected()" in player
+            and "DropSelected()" in player,
+            "Collect/place/drop selected CD actions are missing")
+    require("keyboard.gKey.wasPressedThisFrame" in player,
+            "G must drop the selected physical CD")
+    require("keyboard.leftShiftKey.isPressed" in player,
+            "Shift+E must allow shelving while aiming at another case")
+    require("carriedItems.RemoveAt(selectedIndex)" in player,
+            "Placing a CD must remove only that item from the carry list")
+    require("item.SetHeldPresentation(" in player and
+            "public void SetHeldPresentation(" in physical,
+            "The CD stack has no physical fanned presentation")
+    require("GetCarriedPhysicalIds()" in player and
+            "RestoreCarriedStock(" in player,
+            "Carry stack snapshot/restore methods are missing")
+    require("saveData.carriedPhysicalIds = carryingPlayers[0].GetCarriedPhysicalIds();" in save
+            and "saveData.selectedCarriedIndex = carryingPlayers[0].SelectedCarriedIndex;" in save,
+            "Carried ID order/selection are not captured in the saved data")
+    require("RestoreCarriedItems(saveData.carriedPhysicalIds," in save
+            and "saveData.carriedPhysicalIds ??= new List<string>();" in save,
+            "Carried selection is not restored or old saves are incompatible")
+    require("Wheel: choose CD" in hud and "G: drop CD" in hud,
+            "Controls help does not describe the new stack")
+    require("private const int SaveFormatVersion = 2;" in save,
+            "Do not break existing v2 saves to add the carry stack")
+
     require("private const int SaveFormatVersion = 2;" in save, "Incorrect save version")
     require("shelfOrder = shelfOrder" in save, "Shelved order is not persisted")
     require("RestoreShelvedItems(" in save and "RestoreLooseItems(" in save,
@@ -159,6 +193,7 @@ def main() -> None:
     print("PASS: Save/load contracts, scene wiring and permissive shelving signatures.")
     print("PASS: CD proportions, pile/shelf geometry, room contrast, readable inspect prompt and save upgrade contracts.")
     print("PASS: Three-tier face-out racks, marker/trigger setup, dividers and 80 initially shelved cases.")
+    print("PASS: Ten-case carry limit, wheel selection, selective shelving/drop, and persistent carry IDs.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
