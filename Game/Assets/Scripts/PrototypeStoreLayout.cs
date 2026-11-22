@@ -266,6 +266,13 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
             slot.transform.localPosition = new Vector3(0f, 1.04f, -0.06f);
             slot.transform.localRotation = Quaternion.identity;
             slot.transform.localScale = new Vector3(2.02f, 0.57f, 0.75f);
+            Collider placementVolume = slot.GetComponent<Collider>();
+            if (placementVolume != null)
+            {
+                // A trigger is aimable by the shelving raycast, but won't trap
+                // the player or collide with kinematic CDs inside the rack.
+                placementVolume.isTrigger = true;
+            }
 
             // A large but invisible placement hit volume makes realistic-size
             // cases easy to put down; the cases themselves remain individually
