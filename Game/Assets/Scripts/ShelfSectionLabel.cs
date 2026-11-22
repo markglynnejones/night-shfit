@@ -16,6 +16,9 @@ public sealed class ShelfSectionLabel : MonoBehaviour
     {
         genre = newGenre.ToUpperInvariant();
         artistRange = newArtistRange.ToUpperInvariant();
+        // The old scene serialized black text. A field default alone would not
+        // override it, so set the cream colour for every runtime shelf instance.
+        textColor = new Color(0.96f, 0.93f, 0.83f, 1f);
     }
 
     private void CreateLabel(
