@@ -103,7 +103,7 @@ public sealed class PrototypeOrganisationHud : MonoBehaviour
         GUI.color = oldColor;
 
         GUI.Label(new Rect(19f, helpY + 4f, helpWidth - 14f, 22f),
-            "E  collect / shelve     Wheel  browse     G  drop     Shift+E  force shelve",
+            "E collect / shelve   Wheel browse   Q inspect   G drop   Shift+E place",
             controlStyle);
     }
 }

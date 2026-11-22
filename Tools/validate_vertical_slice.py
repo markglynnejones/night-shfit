@@ -231,8 +231,9 @@ def main() -> None:
     require("RestoreCarriedItems(saveData.carriedPhysicalIds," in save
             and "saveData.carriedPhysicalIds ??= new List<string>();" in save,
             "Carried selection is not restored or old saves are incompatible")
-    require("Wheel  browse" in hud and "G  drop" in hud,
-            "Controls help does not describe the browse/carry actions")
+    require("Wheel browse" in hud and "Q inspect" in hud
+            and "G drop" in hud,
+            "Controls help does not describe browsing, inspection and carry actions")
     require("private const int SaveFormatVersion = 2;" in save,
             "Do not break existing v2 saves to add the carry stack")
 
@@ -290,6 +291,27 @@ def main() -> None:
     require("int columns = Screen.width >= 540 ? 2 : 1;" in player
             and "FitText(" in player,
             "Ten-carried-CD panel must wrap to two short columns and avoid clipping")
+    # Inspect/browse usability pass, without changing world inventory or save format.
+    require("public Texture2D CoverTexture { get; private set; }" in case_art
+            and "CoverTexture = sleeve.Texture;" in case_art,
+            "A CD must expose its existing shared cover texture for inspection")
+    require("public bool TryGetFrontCaseAt(" in shelf,
+            "A rack must expose its front case and count of copies behind it")
+    require("Physics.SphereCastNonAlloc(ray, 0.045f, hits," in player,
+            "Small real-sized CDs need a narrow forgiving aim fallback")
+    require("TryGetFrontCaseAt(worldPoint, out PhysicalInteractable front" in player,
+            "Hidden rack lips must not prevent front-case selection")
+    require("DrawAlbumCard(focusedMedia);" in player
+            and "DrawLargeInspection(inspectedMedia);" in player,
+            "The selected CD must have an album card and a full inspection view")
+    require("keyboard.qKey.isPressed" in player
+            and "GUIUtility.RotateAroundPivot(180f, bounds.center);" in player,
+            "Holding Q must show cover art in the correct screen-space orientation")
+    require("PhysicalInteractable shown = selected != null ? selected : lookedAt;" in player,
+            "Selected album details must remain stable when aiming at other stock")
+    require("Q inspect" in hud,
+            "The contextual inspection key must be documented in the HUD")
+
     require("stock.Length != 1388" in validator and "shelf.Capacity != 252" in validator,
             "Unity Editor validator must check the expanded shop")
 
@@ -311,6 +333,7 @@ def main() -> None:
     print("PASS: CD proportions, pile/shelf geometry, room contrast, readable inspect prompt and save upgrade contracts.")
     print("PASS: Seven-row, four-deep racks, 1120 shelved cases, nonblocking placement targets.")
     print("PASS: Ten-CD two-column UI, wheel selection and in-rack flipping, legible art, furniture and save migration.")
+    print("PASS: Shared cover preview, Q inspect, rack front/copy count and small-CD aim assist.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":

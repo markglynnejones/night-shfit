@@ -194,3 +194,7 @@ Each rack now has nine facings across each of seven rows, with four real item po
 The ten-CD panel now uses two columns of five and truncates long labels with ellipses, while full album detail remains in the focus panel. Covers have original high-contrast bitmap lettering instead of the previous overlapping per-item TextMesh objects. The store has supported furniture, more restrained signage and warmer lighting.
 
 This is an implementation candidate. Unity Editor compilation, frame rate, physical interactions, rendered cover readability and migration are still acceptance requirements; do not claim a finished milestone based on source tests alone.
+
+## 2026-11-22 — Readable CD browsing and inspection
+
+After the seven-row/four-deep and full shop pass, the player's feedback confirmed the racks and frame rate are good. The next priority is to **identify and browse CDs more easily without enlarging the physical cases**. Use the same cached album cover texture for a clear bottom-right card, a held-Q larger inspection screen, a stable selected-CD card while carrying, narrow aim assist for small cases, and a read-only count of cases behind a browsed rack facing. Keep E, Shift+E, G, wheel carrying, player-authored shelf order and version-2 save persistence unchanged. Q is a temporary view rather than a separate inventory or pause mechanic.

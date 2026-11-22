@@ -58,3 +58,17 @@ Play for 15-30 minutes and report frame-rate issues, interaction frustrations, w
 - [ ] Verify a similar cover on a browsing rack has upright lettering.
 - [ ] Check the album art still aligns with its cover border and the high-contrast title band.
 - [ ] Confirm this fix does not rotate the physical case, change interaction, shelving order, carry stack or saved positions.
+
+## Follow-up usability: identifying and browsing CDs
+
+- [ ] Aim at a loose CD with empty hands. Its actual cover, artist, album and genre appear on a readable bottom-right card.
+- [ ] Hold **Q** on that CD. A large correctly oriented album cover and artist/title appear in a temporary inspection view; releasing Q closes it without changing the item.
+- [ ] Hold Q when carrying a stack: inspecting another case should not change which CD is selected to shelve. The normal focus card should continue to identify the selected carried case.
+- [ ] Pick up 10 CDs and wheel between them. The bottom-right cover preview and highlighted inventory entry both follow the selected case; no album text is clipped.
+- [ ] Try aiming at small cases in a crowded rack and near a shallow retaining lip. The narrow targeting assist should help collect cases without accidentally targeting behind walls.
+- [ ] With hands empty and a populated four-deep rack facing, the inspection card shows the count of physical copies behind the face. Mouse-wheel flipping changes the visible case; inspect it again.
+- [ ] Confirm artist/title lettering reads upright on real CD case fronts **and** on the screen-space previews.
+- [ ] Check all panels in a short Unity Game view (~1100 × 380) and a maximised Game view. The status, carried stock and album card should not overlap.
+- [ ] P/O save/reload preserves carried selection, misfiled cases and flipped rack ordering. The Q inspection panel must not cause autosaves or change any world state.
+
+Unity playtest is required: the source checks do not verify physical aiming, rendered labels or in-game legibility.
