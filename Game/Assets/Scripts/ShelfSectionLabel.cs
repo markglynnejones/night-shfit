@@ -4,18 +4,21 @@ public sealed class ShelfSectionLabel : MonoBehaviour
 {
     [SerializeField] private string genre = "ROCK";
     [SerializeField] private string artistRange = "A-G";
-    [SerializeField] private Color textColor = Color.black;
+    [SerializeField] private Color textColor = new(0.96f, 0.93f, 0.83f, 1f);
 
     private void Start()
     {
-        CreateLabel("Shelf Genre Text", genre, new Vector3(0f, 1.43f, -0.455f), SizeForText(genre, 0.024f, 5));
-        CreateLabel("Shelf Artist Range Text", artistRange, new Vector3(-0.52f, 1.03f, -0.455f), SizeForText(artistRange, 0.026f, 3));
+        CreateLabel("Shelf Genre Text", genre, new Vector3(0f, 1.31f, -0.455f), SizeForText(genre, 0.043f, 5));
+        CreateLabel("Shelf Artist Range Text", artistRange, new Vector3(-0.52f, 0.96f, -0.455f), SizeForText(artistRange, 0.033f, 3));
     }
 
     public void Configure(string newGenre, string newArtistRange)
     {
         genre = newGenre.ToUpperInvariant();
         artistRange = newArtistRange.ToUpperInvariant();
+        // The old scene serialized black text. A field default alone would not
+        // override it, so set the cream colour for every runtime shelf instance.
+        textColor = new Color(0.96f, 0.93f, 0.83f, 1f);
     }
 
     private void CreateLabel(

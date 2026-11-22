@@ -62,3 +62,18 @@ Record at least one timed **30–60-minute** session.
 - There is no Unity CI runner configured; compile, scene and playtest gates must run locally.
 
 Fix critical failures and repeat the test **before** scaling to more music or other media.
+
+## Scale and readability follow-up (first five-minute feedback)
+
+- [ ] A physical CD should be approximately **17.2 cm by 13.6 cm** rather than the original 78 cm by 62 cm.
+- [ ] Player eye starts at **about 1.65 m** above floor; walk into the room and confirm no floating start or excessively tall viewpoint.
+- [ ] The table, browse bins and loose floor stacks sit on their surfaces without visible floating or intersections; cases in a pile are about 2 cm apart vertically.
+- [ ] Shelf rows hold small CDs closely, with a narrow, neutral placement marker rather than an oversized highlighted slot.
+- [ ] Rock shelving uses burgundy signs and Indie shelving uses muted petrol/teal signs, with legible cream lettering.
+- [ ] Room walls and floor have a warmer, calmer material palette, with less harsh lighting.
+- [ ] Aim at a small CD: a bottom-right card identifies its genre, artist and album title, and shows **E to pick up**. Pick it up and check **E to place/drop**.
+- [ ] Verify an incorrectly filed CD can still be placed and saved; check your existing progress still loads.
+- [ ] With a saved v2 shop from before the scale pass, confirm loose cases are automatically resettled on supports, while shelf IDs/order remain intact. Keep a backup before testing.
+- [ ] Play for 5–10 minutes and note any cases now too fiddly to pick up, shelf gaps, or unreadable signs.
+
+If the new dimensions are too small to target reliably, adjust the interaction affordance or spacing rather than reverting to giant physical CDs.

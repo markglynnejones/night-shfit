@@ -24,6 +24,8 @@ def main() -> None:
     shelf = (SCRIPTS / "ShelfSlot.cs").read_text(encoding="utf-8")
     save = (SCRIPTS / "PrototypeSaveLoadController.cs").read_text(encoding="utf-8")
     scene = SCENE.read_text(encoding="utf-8")
+    layout = (SCRIPTS / "PrototypeStoreLayout.cs").read_text(encoding="utf-8")
+    player = (SCRIPTS / "PlayerInteraction.cs").read_text(encoding="utf-8")
 
     # Pull only literal seed constructors out of the two purpose-built blocks.
     album_block = setup.split("AdditionalAlbums =", 1)[1].split("private static readonly ShelfSeed", 1)[0]
@@ -98,6 +100,28 @@ def main() -> None:
             f"Unexpected start split: {reference}/{misplaced}/{loose}")
     require(max(occupancy.values()) <= 18, "Starting shelf is over capacity")
 
+    # Visual proportions are coupled: changing case scale without retuning piles
+    # or shelf spacing would leave the room full of floating, oversized gaps.
+    require("JewelCaseScale = 0.22f" in setup, "Physical case scale drifted")
+    require("cd.transform.localScale = Vector3.one * JewelCaseScale" in setup,
+            "New case scale is not applied to each physical instance")
+    require("PileLayerSpacing = 0.020f" in setup and "layer * PileLayerSpacing" in setup,
+            "Loose stock stacks were not rescaled")
+    require("slot.ConfigureJewelCaseSpacing();" in setup,
+            "Shelf spacing was not updated")
+    require("PrototypeStoreLayout.StyleShelf(shelf, seed.Genre);" in setup,
+            "Shelves are not restyled")
+    require("public static void StyleShelf" in layout
+            and "slotVisual.enabled = false;" in layout,
+            "Oversized visible shelf slot is still in the scene")
+    require("focusedMedia" in player and "album.ArtistName" in player,
+            "Readable catalogue interaction prompt is missing")
+    require("m_LocalPosition: {x: 0, y: 0, z: -2}" in scene,
+            "Player starts too high for a 1.65-metre eye height")
+    require("CurrentVisualScaleSignature" in save
+            and "UpgradeLegacyLooseCaseHeights" in save,
+            "Old saves may not reposition their oversized piles")
+
     require("private const int SaveFormatVersion = 2;" in save, "Incorrect save version")
     require("shelfOrder = shelfOrder" in save, "Shelved order is not persisted")
     require("RestoreShelvedItems(" in save and "RestoreLooseItems(" in save,
@@ -119,6 +143,7 @@ def main() -> None:
           f"{len(shelves)} valid bays; {reference} reference, "
           f"{misplaced} misfiled, {loose} loose.")
     print("PASS: Save/load contracts, scene wiring and permissive shelving signatures.")
+    print("PASS: CD proportions, pile/shelf geometry, room contrast, readable inspect prompt and save upgrade contracts.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
