@@ -51,3 +51,10 @@ This is a code/content candidate awaiting a Unity 6000.5.8f1 playtest.
 ## Acceptance
 
 Play for 15-30 minutes and report frame-rate issues, interaction frustrations, whether the shop feels stocked without overwhelming the player, legibility, and any clipping. Fix critical bugs before adding DVDs or games. Static GitHub checks do not replace this player test.
+
+## Follow-up: procedural cover orientation
+
+- [ ] Hold a CD and read the artist/title on its *front face*. Both must be upright, not rotated 180 degrees.
+- [ ] Verify a similar cover on a browsing rack has upright lettering.
+- [ ] Check the album art still aligns with its cover border and the high-contrast title band.
+- [ ] Confirm this fix does not rotate the physical case, change interaction, shelving order, carry stack or saved positions.
