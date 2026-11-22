@@ -10,10 +10,12 @@ public sealed class ShelfSectionLabel : MonoBehaviour
     {
         // Billboard behind the three browsing tiers; keep the genre and A-Z
         // range in a single eye-readable header, not on an empty bookcase.
+        // Smaller type sits within the compact two-metre shop sign. The
+        // old large TextMesh values obscured the CD rows from a standing view.
         CreateLabel("Shelf Genre Text", genre,
-            new Vector3(-0.35f, 1.38f, 0.268f), SizeForText(genre, 0.047f, 5));
+            new Vector3(-0.26f, 1.66f, 0.375f), SizeForText(genre, 0.026f, 5));
         CreateLabel("Shelf Artist Range Text", artistRange,
-            new Vector3(0.69f, 1.38f, 0.241f), SizeForText(artistRange, 0.043f, 3));
+            new Vector3(0.73f, 1.66f, 0.341f), SizeForText(artistRange, 0.022f, 3));
     }
 
     public void Configure(string newGenre, string newArtistRange)
