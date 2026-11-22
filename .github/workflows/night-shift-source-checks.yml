@@ -8,6 +8,7 @@ on:
       - '.github/workflows/night-shift-source-checks.yml'
   push:
     branches:
+      - main
       - feature/rock-indie-vertical-slice
     paths:
       - 'Game/**'
