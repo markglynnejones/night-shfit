@@ -124,6 +124,22 @@ public sealed class PhysicalInteractable : MonoBehaviour
         transform.localPosition = localOffset;
     }
 
+    // Settled authored piles are stationary until touched; 100+ colliding loose
+    // rigidbodies would otherwise erupt when the prototype scene starts.
+    public void SettleLooseStock()
+    {
+        if (IsHeld || currentShelfSlot != null)
+        {
+            return;
+        }
+
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.isKinematic = true;
+        body.useGravity = false;
+        body.detectCollisions = true;
+    }
+
     public void RestoreLooseState(Vector3 worldPosition, Quaternion worldRotation)
     {
         currentShelfSlot?.ClearIfHolding(this);
@@ -137,8 +153,9 @@ public sealed class PhysicalInteractable : MonoBehaviour
 
         body.linearVelocity = Vector3.zero;
         body.angularVelocity = Vector3.zero;
-        body.useGravity = true;
-        body.isKinematic = false;
+        // A saved resting transform is authoritative; don't let a stack explode on load.
+        body.useGravity = false;
+        body.isKinematic = true;
         body.detectCollisions = true;
     }
 

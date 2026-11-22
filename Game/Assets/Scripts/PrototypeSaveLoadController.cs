@@ -9,7 +9,7 @@ using UnityObject = UnityEngine.Object;
 
 public sealed class PrototypeSaveLoadController : MonoBehaviour
 {
-    private const int SaveFormatVersion = 1;
+    private const int SaveFormatVersion = 2;
     private const string SaveFileName = "prototype-save.json";
     private const string BackupSaveExtension = ".bak";
     private const string TemporarySaveExtension = ".tmp";
