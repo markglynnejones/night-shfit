@@ -166,6 +166,17 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             visualScaleSignature = CurrentVisualScaleSignature
         };
 
+        // The hand stack is saved as an ordered list of physical IDs. Carried
+        // cases are also included in looseMediaItems for backwards-compatible
+        // world state and as a safe fallback if the list cannot be restored.
+        PlayerInteraction[] carryingPlayers =
+            UnityObject.FindObjectsByType<PlayerInteraction>(FindObjectsInactive.Exclude);
+        if (carryingPlayers.Length > 0 && carryingPlayers[0] != null)
+        {
+            saveData.carriedPhysicalIds = carryingPlayers[0].GetCarriedPhysicalIds();
+            saveData.selectedCarriedIndex = carryingPlayers[0].SelectedCarriedIndex;
+        }
+
         MediaItem[] mediaItems = UnityObject.FindObjectsByType<MediaItem>(FindObjectsInactive.Exclude);
         Array.Sort(mediaItems, CompareMediaItemsByPhysicalId);
 
@@ -279,6 +290,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             RestoreLooseItems(saveData.looseMediaItems, mediaItemsById, restoredPhysicalIds);
             RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById, shelvesById, restoredPhysicalIds);
             RestorePlayer(saveData.player);
+            RestoreCarriedItems(saveData.carriedPhysicalIds,
+                saveData.selectedCarriedIndex, mediaItemsById, restoredPhysicalIds);
 
             hasDirtyChanges = false;
             nextPeriodicAutosaveTime = Time.unscaledTime + periodicAutosaveSeconds;
@@ -424,6 +437,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         saveData.player ??= new PlayerSaveData();
         saveData.looseMediaItems ??= new List<LooseMediaItemSaveData>();
         saveData.shelvedMediaItems ??= new List<ShelvedMediaItemSaveData>();
+        saveData.carriedPhysicalIds ??= new List<string>();
     }
 
     private static PlayerSaveData CapturePlayer()
@@ -662,6 +676,52 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         }
     }
 
+    private static void RestoreCarriedItems(List<string> carriedPhysicalIds,
+        int selectedIndex, Dictionary<string, MediaItem> mediaItemsById,
+        HashSet<string> restoredPhysicalIds)
+    {
+        if (carriedPhysicalIds == null || carriedPhysicalIds.Count == 0)
+        {
+            return;
+        }
+
+        PlayerInteraction[] players =
+            UnityObject.FindObjectsByType<PlayerInteraction>(FindObjectsInactive.Exclude);
+        if (players.Length == 0 || players[0] == null)
+        {
+            Debug.LogWarning("Could not restore held CD stack: player interaction is absent.");
+            return;
+        }
+
+        HashSet<string> unique = new();
+        List<PhysicalInteractable> carried = new();
+        foreach (string id in carriedPhysicalIds)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !unique.Add(id)
+                || carried.Count >= PlayerInteraction.MaxCarryItems)
+            {
+                continue;
+            }
+
+            // A carried case must already be restored as loose stock; never
+            // steal something from its authored shelf when loading a bad save.
+            if (!restoredPhysicalIds.Contains(id)
+                || !mediaItemsById.TryGetValue(id, out MediaItem media))
+            {
+                Debug.LogWarning("Could not restore missing carried CD: " + id);
+                continue;
+            }
+
+            PhysicalInteractable item = media.GetComponent<PhysicalInteractable>();
+            if (item != null && item.CurrentShelfSlot == null)
+            {
+                carried.Add(item);
+            }
+        }
+
+        players[0].RestoreCarriedStock(carried, selectedIndex);
+    }
+
     private static void ClearHeldItems()
     {
         PlayerInteraction[] playerInteractions =
@@ -703,6 +763,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         public PlayerSaveData player = new();
         public List<LooseMediaItemSaveData> looseMediaItems = new();
         public List<ShelvedMediaItemSaveData> shelvedMediaItems = new();
+        public List<string> carriedPhysicalIds = new();
+        public int selectedCarriedIndex;
     }
 
     [Serializable]
