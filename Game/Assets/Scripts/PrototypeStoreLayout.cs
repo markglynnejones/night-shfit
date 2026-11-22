@@ -109,8 +109,7 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
         CreateCube("Front Sale Poster Right", new Vector3(4.9f, 1.8f, -4.82f),
             new Vector3(1.6f, 1.15f, 0.05f), gold);
-        CreateText("Sale Poster Right Text", "ALL STOCK
-MUST GO", new Vector3(4.9f, 1.82f, -4.86f),
+        CreateText("Sale Poster Right Text", "ALL STOCK\nMUST GO", new Vector3(4.9f, 1.82f, -4.86f),
             0.028f, Quaternion.Euler(0f, 180f, 0f));
 
         CreateCube("Rock Department Strip", new Vector3(-2.38f, 2.1f, 4.07f),
