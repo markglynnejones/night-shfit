@@ -231,8 +231,9 @@ def main() -> None:
     require("RestoreCarriedItems(saveData.carriedPhysicalIds," in save
             and "saveData.carriedPhysicalIds ??= new List<string>();" in save,
             "Carried selection is not restored or old saves are incompatible")
-    require("Wheel  browse" in hud and "G  drop" in hud,
-            "Controls help does not describe the browse/carry actions")
+    require("Wheel browse" in hud and "Q inspect" in hud
+            and "G drop" in hud,
+            "Controls help does not describe browsing, inspection and carry actions")
     require("private const int SaveFormatVersion = 2;" in save,
             "Do not break existing v2 saves to add the carry stack")
 
