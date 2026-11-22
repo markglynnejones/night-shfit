@@ -297,9 +297,11 @@ def main() -> None:
             "A CD must expose its existing shared cover texture for inspection")
     require("public bool TryGetFrontCaseAt(" in shelf,
             "A rack must expose its front case and count of copies behind it")
-    require("Physics.SphereCastNonAlloc(ray, 0.045f, hits," in player,
+    require("Physics.SphereCastNonAlloc(ray, assistanceRadius," in player
+            and "const float assistanceRadius = 0.02f;" in player,
             "Small real-sized CDs need a narrow forgiving aim fallback")
-    require("TryGetFrontCaseAt(worldPoint, out PhysicalInteractable front" in player,
+    require("TryGetFrontCaseAt(facePoint," in player
+            and "out PhysicalInteractable front" in player,
             "Hidden rack lips must not prevent front-case selection")
     require("DrawAlbumCard(focusedMedia);" in player
             and "DrawLargeInspection(inspectedMedia);" in player,
@@ -312,6 +314,20 @@ def main() -> None:
     require("out Vector3 wheelRackHitPoint" in player
             and "rack.FlipCoverAt(wheelRackHitPoint" in player,
             "Wheel hit variable must not shadow another out-local in Update")
+    require("ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f))" in player,
+            "Pickup/placement must use optical-centre aiming")
+    require("public bool TryGetAimedFacePoint(Ray sightLine" in shelf
+            and "LocalOffsetForIndex(face)" in shelf,
+            "Shelf aiming must resolve the visible CD facing")
+    require("closestShelfSlot.TryGetAimedFacePoint(ray, interactionRange," in player,
+            "Shelf interactions must target the actual visible face")
+    require("firstSolidDistance" in player
+            and "!hit.collider.transform.IsChildOf(targetRoot)" in player,
+            "Aiming must avoid stock behind solid obstructions")
+    require("aimedItem = lookedAt;" in player
+            and "DrawAimPrompt();" in player
+            and "E  PICK UP" in player,
+            "Crosshair prompts must describe the pickup target")
     update_body = player.split("private void Update()", 1)[1].split(
         "private void SelectRelative(", 1)[0]
     require(update_body.count("out Vector3 point") == 1,
@@ -341,6 +357,7 @@ def main() -> None:
     print("PASS: Seven-row, four-deep racks, 1120 shelved cases, nonblocking placement targets.")
     print("PASS: Ten-CD two-column UI, wheel selection and in-rack flipping, legible art, furniture and save migration.")
     print("PASS: Shared cover preview, Q inspect, rack front/copy count and small-CD aim assist.")
+    print("PASS: Optical-centre CD pickup, physical rack-facing selection and targeted action prompts.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
