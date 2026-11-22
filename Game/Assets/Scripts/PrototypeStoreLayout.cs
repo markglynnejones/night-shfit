@@ -172,6 +172,9 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
     // Keep the slot collider/snap transform intact. Only the oversized fixture
     // meshes and visible signs shrink: this preserves existing shelf IDs and saves.
+    // Build shallow, waist-height CD flip-bins. This preserves the original
+    // ShelfSlot, snap transform and persistent section ID, but replaces the
+    // greybox bookcase silhouette with a familiar early-2000s music-shop rack.
     public static void StyleShelf(Transform shelf, string genre)
     {
         if (shelf == null)
@@ -181,43 +184,92 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
 
         if (shelfFrameMaterial == null)
         {
-            shelfFrameMaterial = CreateMaterial("Shelf Frame Ash Wood", new Color(0.49f, 0.45f, 0.39f));
-            shelfBackMaterial = CreateMaterial("Shelf Back Warm Charcoal", new Color(0.24f, 0.27f, 0.28f));
-            rockHeaderMaterial = CreateMaterial("Rock Section Faded Burgundy", new Color(0.50f, 0.21f, 0.24f));
-            indieHeaderMaterial = CreateMaterial("Indie Section Muted Petrol", new Color(0.16f, 0.40f, 0.42f));
-            shelfRangeMaterial = CreateMaterial("Shelf Range Slate", new Color(0.27f, 0.31f, 0.32f));
+            shelfFrameMaterial = CreateMaterial("Flip-Bin Dark Metal Frame",
+                new Color(0.23f, 0.25f, 0.26f));
+            shelfBackMaterial = CreateMaterial("Flip-Bin Charcoal Deck",
+                new Color(0.14f, 0.16f, 0.17f));
+            rockHeaderMaterial = CreateMaterial("Rock and Pop Burgundy Header",
+                new Color(0.55f, 0.18f, 0.30f));
+            indieHeaderMaterial = CreateMaterial("Indie Petrol Header",
+                new Color(0.13f, 0.37f, 0.40f));
+            shelfRangeMaterial = CreateMaterial("Divider Matte Slate",
+                new Color(0.31f, 0.35f, 0.36f));
         }
 
-        StylePart(shelf, "Shelf Back", new Vector3(0f, 0.75f, 0.12f),
-            new Vector3(2.1f, 1.24f, 0.09f), shelfBackMaterial);
-        StylePart(shelf, "Shelf Board", new Vector3(0f, 0.43f, -0.04f),
-            new Vector3(2.1f, 0.05f, 0.51f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Top", new Vector3(0f, 1.16f, -0.04f),
-            new Vector3(2.1f, 0.05f, 0.51f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Left Side", new Vector3(-1.06f, 0.75f, -0.04f),
-            new Vector3(0.045f, 1.24f, 0.51f), shelfFrameMaterial);
-        StylePart(shelf, "Shelf Right Side", new Vector3(1.06f, 0.75f, -0.04f),
-            new Vector3(0.045f, 1.24f, 0.51f), shelfFrameMaterial);
-        StylePart(shelf, "ROCK Shelf Sign Panel", new Vector3(0f, 1.31f, -0.43f),
-            new Vector3(1.25f, 0.19f, 0.025f),
-            string.Equals(genre, "Indie", System.StringComparison.OrdinalIgnoreCase)
-                ? indieHeaderMaterial : rockHeaderMaterial);
-        StylePart(shelf, "B Shelf Sign Panel", new Vector3(-0.52f, 0.96f, -0.43f),
-            new Vector3(0.23f, 0.18f, 0.025f), shelfRangeMaterial);
+        bool isIndie = string.Equals(genre, "Indie",
+            System.StringComparison.OrdinalIgnoreCase);
+        Material header = isIndie ? indieHeaderMaterial : rockHeaderMaterial;
 
+        // Reuse the scene's model parts rather than layering a new rack on top.
+        StylePart(shelf, "Shelf Back", new Vector3(0f, 0.48f, 0.36f),
+            new Vector3(2.13f, 0.92f, 0.065f), shelfBackMaterial);
+        StylePart(shelf, "Shelf Board", new Vector3(0f, 0.74f, -0.03f),
+            new Vector3(2.12f, 0.07f, 0.84f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Top", new Vector3(0f, 1.53f, 0.36f),
+            new Vector3(2.14f, 0.035f, 0.065f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Left Side", new Vector3(-1.08f, 1.05f, -0.03f),
+            new Vector3(0.05f, 0.65f, 0.86f), shelfFrameMaterial);
+        StylePart(shelf, "Shelf Right Side", new Vector3(1.08f, 1.05f, -0.03f),
+            new Vector3(0.05f, 0.65f, 0.86f), shelfFrameMaterial);
+
+        // A high-contrast header and alphabet tab, like the photo reference.
+        StylePart(shelf, "ROCK Shelf Sign Panel", new Vector3(0f, 1.38f, 0.31f),
+            new Vector3(2.04f, 0.245f, 0.025f), header);
+        StylePart(shelf, "B Shelf Sign Panel", new Vector3(0.69f, 1.38f, 0.282f),
+            new Vector3(0.42f, 0.195f, 0.025f), shelfRangeMaterial);
+
+        // Three stepped decks expose the actual front covers. Six physical
+        // cases sit across each deck; shallow rails and index tabs suggest the
+        // CD browsing troughs used in real high-street music shops.
+        for (int tier = 0; tier < 3; tier++)
+        {
+            float y = 0.79f + tier * 0.10f;
+            float z = -0.30f + tier * 0.24f;
+
+            CreateRackPart(shelf, "Browsing Deck " + (tier + 1),
+                new Vector3(0f, y, z),
+                new Vector3(2.07f, 0.043f, 0.235f), shelfBackMaterial);
+            CreateRackPart(shelf, "Browsing Front Lip " + (tier + 1),
+                new Vector3(0f, y + 0.028f, z - 0.124f),
+                new Vector3(2.07f, 0.049f, 0.025f), shelfFrameMaterial);
+
+            // Each small tab marks a divider rather than behaving like a CD.
+            for (int divider = 0; divider < 2; divider++)
+            {
+                float x = divider == 0 ? -0.60f : 0.285f;
+                CreateRackPart(shelf, "Index Divider " + (tier + 1) + "-" + (divider + 1),
+                    new Vector3(x, y + 0.09f, z + 0.038f),
+                    new Vector3(0.027f, 0.19f, 0.082f), header);
+            }
+        }
+
+        CreateRackPart(shelf, "Browsing Bin Plinth",
+            new Vector3(0f, 0.34f, -0.02f),
+            new Vector3(2.07f, 0.64f, 0.78f), shelfFrameMaterial);
+        CreateRackPart(shelf, "Browsing Bin Front Panel",
+            new Vector3(0f, 0.47f, -0.425f),
+            new Vector3(2.07f, 0.58f, 0.045f), shelfBackMaterial);
+
+        // Snap stays a direct child of the shelf, with absolute in-rack
+        // offsets computed by ShelfSlot.LocalOffsetForIndex. No saved IDs move.
         Transform snap = shelf.Find("ROCK A-G CD Snap Point");
         if (snap != null)
         {
-            snap.localPosition = new Vector3(0f, 0.53f, -0.38f);
+            snap.localPosition = Vector3.zero;
+            snap.localRotation = Quaternion.identity;
+            snap.localScale = Vector3.one;
         }
 
         ShelfSlot slot = shelf.GetComponentInChildren<ShelfSlot>();
         if (slot != null)
         {
-            slot.transform.localPosition = new Vector3(0f, 0.53f, -0.34f);
-            slot.transform.localScale = new Vector3(1.75f, 0.31f, 0.02f);
+            slot.transform.localPosition = new Vector3(0f, 1.04f, -0.06f);
+            slot.transform.localRotation = Quaternion.identity;
+            slot.transform.localScale = new Vector3(2.02f, 0.57f, 0.75f);
 
-            // The large bright prototype slot should never cover the CD spines.
+            // A large but invisible placement hit volume makes realistic-size
+            // cases easy to put down; the cases themselves remain individually
+            // pickable, with their own colliders.
             MeshRenderer slotVisual = slot.GetComponent<MeshRenderer>();
             if (slotVisual != null)
             {
@@ -238,6 +290,30 @@ public sealed class PrototypeStoreLayout : MonoBehaviour
         part.localPosition = position;
         part.localScale = scale;
         MeshRenderer renderer = part.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = material;
+        }
+    }
+
+    private static void CreateRackPart(Transform parent, string name,
+        Vector3 localPosition, Vector3 localScale, Material material)
+    {
+        GameObject piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        piece.name = name;
+        piece.transform.SetParent(parent, false);
+        piece.transform.localPosition = localPosition;
+        piece.transform.localScale = localScale;
+
+        // The rack is display geometry. ShelfSlot owns the placement physics;
+        // extra collider faces here would obstruct aiming at small CD covers.
+        Collider collider = piece.GetComponent<Collider>();
+        if (collider != null)
+        {
+            Object.Destroy(collider);
+        }
+
+        MeshRenderer renderer = piece.GetComponent<MeshRenderer>();
         if (renderer != null)
         {
             renderer.sharedMaterial = material;
