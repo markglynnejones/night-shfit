@@ -428,16 +428,17 @@ public sealed class PlayerInteraction : MonoBehaviour
     {
         // Two columns of five fit a short Unity Game viewport. One long list
         // used to cut off the selected tenth item and long album titles.
-        int columns = Screen.width >= 740 ? 2 : 1;
-        float width = Mathf.Min(490f, Screen.width * 0.49f);
+        int columns = Screen.width >= 540 ? 2 : 1;
+        float width = Mathf.Min(490f, Mathf.Max(280f, Screen.width * 0.49f));
         float x = Mathf.Max(6f, Screen.width - width - 12f);
         int rows = Mathf.CeilToInt(carriedItems.Count / (float)columns);
-        float rowHeight = columns == 2 ? 42f : 32f;
-        float height = 45f + rows * rowHeight;
+        bool compact = Screen.height < 360f;
+        float rowHeight = compact ? 23f : columns == 2 ? 39f : 28f;
+        float height = 43f + rows * rowHeight;
         float y = 12f;
 
         // Don't obscure the bottom-right album inspection card.
-        height = Mathf.Min(height, Mathf.Max(70f, Screen.height - 157f));
+        height = Mathf.Min(height, Mathf.Max(70f, Screen.height - 151f));
         DrawPanel(new Rect(x, y, width, height),
             new Color(0.07f, 0.13f, 0.16f, 0.97f));
 
@@ -485,7 +486,7 @@ public sealed class PlayerInteraction : MonoBehaviour
             GUI.Label(new Rect(colX + 7f, rowY + 1f, textWidth, 19f),
                 FitText(artist, artistStyle, textWidth), artistStyle);
 
-            if (columns == 2)
+            if (columns == 2 && !compact)
             {
                 GUI.Label(new Rect(colX + 7f, rowY + 20f, textWidth, 18f),
                     FitText(album.AlbumTitle, stackEntryStyle, textWidth),
