@@ -72,3 +72,15 @@ Play for 15-30 minutes and report frame-rate issues, interaction frustrations, w
 - [ ] P/O save/reload preserves carried selection, misfiled cases and flipped rack ordering. The Q inspection panel must not cause autosaves or change any world state.
 
 Unity playtest is required: the source checks do not verify physical aiming, rendered labels or in-game legibility.
+
+## Precise aiming acceptance
+
+- [ ] Point the centre dot at different CDs in a densely filled rack. The **green** dot and nearby artist/action prompt should correspond to the precise CD under the dot.
+- [ ] With a CD selected in hand, point at an empty rack space. The dot should turn **blue** and E should place in the row being aimed at, not one above or below.
+- [ ] When empty-handed, wheel-flip a four-deep row and check only the intended stack changes.
+- [ ] Try near the edge of a small CD and near retaining lips. The narrow 2 cm targeting assist should help without selecting a neighbouring CD.
+- [ ] Look at a rack partly hidden behind a table, a wall and another object. There should be no pickup or placement through that obstruction.
+- [ ] With several carried CDs, the bottom-right card still describes the selected carried CD while the crosshair prompt describes what pressing E will collect or shelve.
+- [ ] Test a normal Game window and maximised Game view, and check P/O save/reload does not change any shelving or inventory state.
+
+These are real Unity interaction tests; passing GitHub source checks alone does not verify the feel.
