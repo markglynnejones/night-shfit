@@ -518,8 +518,10 @@ public sealed class PlayerInteraction : MonoBehaviour
             FitText(controls, albumDetailStyle, textWidth),
             albumDetailStyle);
 
-        GUI.Label(new Rect(x + 12f, y + height - 11f, coverSize, 18f),
-            "HOLD Q TO INSPECT", albumDetailStyle);
+        DrawPanel(new Rect(x + 12f, y + height - 34f,
+            coverSize, 22f), new Color(0.06f, 0.12f, 0.15f, 0.94f));
+        GUI.Label(new Rect(x + 16f, y + height - 33f,
+            coverSize - 8f, 20f), "HOLD Q  INSPECT", stackSelectedStyle);
     }
 
     private void DrawLargeInspection(MediaItem media)
