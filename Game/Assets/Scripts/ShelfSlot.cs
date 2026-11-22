@@ -12,17 +12,22 @@ public sealed class ShelfSlot : MonoBehaviour
     [SerializeField] private float itemSpacing = 0.11f;
     [SerializeField] private int maxItems = 18;
 
-    // Reference: real music-shop flip-bins, not bookcases. Covers tilt slightly
-    // towards a standing customer and occupy three staggered front-facing tiers.
+    // Seven stepped rows of nine face-out CDs, with four physical copies behind
+    // each front-facing position. The shelf order remains a single persistent
+    // list; the next layer fills only when the front layer is occupied.
     private static readonly Vector3 ShelvedEulerAngles = new(28f, 0f, 0f);
-    private const int CoversPerTier = 9;
-    private const int TierCount = 3;
+    public const int CoversPerTier = 9;
+    public const int TierCount = 7;
+    public const int MaxDepth = 4;
+    public const int FacesPerLayer = CoversPerTier * TierCount;
     private const float FirstCoverX = -0.84f;
     private const float CoverHorizontalSpacing = 0.21f;
-    private const float FirstTierZ = -0.300f;
-    private const float TierDepthSpacing = 0.240f;
-    private const float FirstTierHeight = 0.885f;
-    private const float TierHeightSpacing = 0.100f;
+    private const float FirstTierZ = -0.47f;
+    private const float TierDepthSpacing = 0.13f;
+    private const float FirstTierHeight = 0.81f;
+    private const float TierHeightSpacing = 0.085f;
+    private const float DeepCaseOffsetZ = 0.026f;
+    private const float DeepCaseOffsetY = 0.013f;
 
     private readonly List<PhysicalInteractable> placedItems = new();
     private GameObject placementHint;
@@ -32,35 +37,45 @@ public sealed class ShelfSlot : MonoBehaviour
     public int Capacity => maxItems;
     public string AcceptedGenre => acceptedGenre;
 
-    // Longest ordered subsequence: stock that can remain while wrongly placed stock is removed.
-    // This gives useful incremental progress without requiring an exact hard-coded slot.
+    // O(n log n) longest nondecreasing ordered subsequence. Duplicates remain
+    // valid adjacent stock. Checking 1,000+ cases must not stutter the HUD.
     public int CountCorrectlyOrganisedItems()
     {
-        int count = placedItems.Count;
-        int[] best = new int[count];
-        int longest = 0;
-
-        for (int i = 0; i < count; i++)
+        List<AlbumDefinition> tails = new();
+        foreach (PhysicalInteractable item in placedItems)
         {
-            AlbumDefinition current = GetAlbum(placedItems[i]);
-            if (!CanAccept(current))
+            AlbumDefinition album = GetAlbum(item);
+            if (!CanAccept(album))
             {
                 continue;
             }
 
-            best[i] = 1;
-            for (int j = 0; j < i; j++)
+            int low = 0;
+            int high = tails.Count;
+            while (low < high)
             {
-                if (best[j] > 0 && CompareAlbumOrder(GetAlbum(placedItems[j]), current) <= 0)
+                int middle = (low + high) / 2;
+                if (CompareAlbumOrder(tails[middle], album) <= 0)
                 {
-                    best[i] = Mathf.Max(best[i], best[j] + 1);
+                    low = middle + 1;
+                }
+                else
+                {
+                    high = middle;
                 }
             }
 
-            longest = Mathf.Max(longest, best[i]);
+            if (low == tails.Count)
+            {
+                tails.Add(album);
+            }
+            else
+            {
+                tails[low] = album;
+            }
         }
 
-        return longest;
+        return tails.Count;
     }
 
     public bool IsFullyOrganised()
@@ -84,10 +99,8 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ConfigureJewelCaseSpacing()
     {
-        // Nine real-sized CDs fit across each 2.1 m tray with small separators.
-        // The scene's old 18-copy setting is intentionally upgraded to 27.
         itemSpacing = CoverHorizontalSpacing;
-        maxItems = CoversPerTier * TierCount;
+        maxItems = FacesPerLayer * MaxDepth;
     }
 
     public bool TryPlace(PhysicalInteractable item)
@@ -147,13 +160,13 @@ public sealed class ShelfSlot : MonoBehaviour
         EnsurePlacementHint();
         Transform referenceTransform = snapPoint != null ? snapPoint : transform;
         Vector3 hintPosition = LocalOffsetForIndex(
-            Mathf.Clamp(insertionIndex, 0, CoversPerTier * TierCount - 1));
-        hintPosition.y += 0.026f;
-        hintPosition.z -= 0.035f;
+            Mathf.Clamp(insertionIndex, 0, maxItems - 1));
+        hintPosition.y += 0.013f;
+        hintPosition.z -= 0.024f;
 
         placementHint.transform.SetParent(referenceTransform, false);
         placementHint.transform.localPosition = hintPosition;
-        placementHint.transform.localRotation = Quaternion.identity;
+        placementHint.transform.localRotation = Quaternion.Euler(ShelvedEulerAngles);
         placementHint.SetActive(true);
     }
 
@@ -237,13 +250,15 @@ public sealed class ShelfSlot : MonoBehaviour
 
     private Vector3 LocalOffsetForIndex(int index, int itemCount)
     {
-        int slot = Mathf.Clamp(index, 0, CoversPerTier * TierCount - 1);
-        int tier = slot / CoversPerTier;
-        int column = slot % CoversPerTier;
+        int slot = Mathf.Clamp(index, 0, maxItems - 1);
+        int depth = slot / FacesPerLayer;
+        int face = slot % FacesPerLayer;
+        int tier = face / CoversPerTier;
+        int column = face % CoversPerTier;
         return new Vector3(
             FirstCoverX + column * CoverHorizontalSpacing,
-            FirstTierHeight + tier * TierHeightSpacing,
-            FirstTierZ + tier * TierDepthSpacing);
+            FirstTierHeight + tier * TierHeightSpacing + depth * DeepCaseOffsetY,
+            FirstTierZ + tier * TierDepthSpacing + depth * DeepCaseOffsetZ);
     }
 
     private void EnsurePlacementHint()
@@ -255,7 +270,7 @@ public sealed class ShelfSlot : MonoBehaviour
 
         placementHint = new GameObject("Placement Hint");
         CreateHintCube("Placement Hint Case Outline",
-            new Vector3(0f, 0f, 0f), new Vector3(0.180f, 0.014f, 0.16f),
+            new Vector3(0f, 0f, 0f), new Vector3(0.170f, 0.130f, 0.008f),
             CreateHintMaterial(new Color(0.54f, 0.78f, 0.76f, 1f)));
         placementHint.SetActive(false);
     }
@@ -323,13 +338,80 @@ public sealed class ShelfSlot : MonoBehaviour
         int column = Mathf.Clamp(
             Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
             0, CoversPerTier - 1);
+        // The non-solid tray collider is hit at its front face. Its Z is not
+        // the case row, so use the aim height to choose one of seven tiers.
         int tier = Mathf.Clamp(
-            Mathf.RoundToInt((local.z - FirstTierZ) / TierDepthSpacing),
+            Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
             0, TierCount - 1);
 
         // The player is choosing a real space within a browsing tray. An
         // insertion still preserves every other copy's authored order.
         return Mathf.Min(tier * CoversPerTier + column, placedItems.Count);
+    }
+
+    // Browse an individual four-deep column when empty-handed. Rotating the
+    // visible first case to the back changes only that column and persists.
+    // The face is always determined from the same aim location as insertion.
+    public bool FlipCoverAt(Vector3 worldPoint, bool backwards = false)
+    {
+        if (placedItems.Count <= FacesPerLayer)
+        {
+            return false;
+        }
+
+        Transform reference = snapPoint != null ? snapPoint : transform;
+        Vector3 local = reference.InverseTransformPoint(worldPoint);
+        int column = Mathf.Clamp(
+            Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
+            0, CoversPerTier - 1);
+        int tier = Mathf.Clamp(
+            Mathf.RoundToInt((local.y - FirstTierHeight) / TierHeightSpacing),
+            0, TierCount - 1);
+        int face = tier * CoversPerTier + column;
+        int count = 0;
+        for (int layer = 0; layer < MaxDepth; layer++)
+        {
+            if (face + layer * FacesPerLayer >= placedItems.Count)
+            {
+                break;
+            }
+
+            count++;
+        }
+
+        if (count < 2)
+        {
+            return false;
+        }
+
+        int first = face;
+        int last = face + (count - 1) * FacesPerLayer;
+        PhysicalInteractable moving = placedItems[backwards ? last : first];
+
+        if (backwards)
+        {
+            for (int layer = count - 1; layer > 0; layer--)
+            {
+                placedItems[face + layer * FacesPerLayer] =
+                    placedItems[face + (layer - 1) * FacesPerLayer];
+            }
+
+            placedItems[first] = moving;
+        }
+        else
+        {
+            for (int layer = 0; layer < count - 1; layer++)
+            {
+                placedItems[face + layer * FacesPerLayer] =
+                    placedItems[face + (layer + 1) * FacesPerLayer];
+            }
+
+            placedItems[last] = moving;
+        }
+
+        ReflowPlacedItems();
+        PrototypeSaveLoadController.NotifyPersistentStateChanged();
+        return true;
     }
 
     private int SortedInsertionIndexFor(PhysicalInteractable item)
