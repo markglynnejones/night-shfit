@@ -168,6 +168,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         PrototypeSaveData saveData = new()
         {
             version = SaveFormatVersion,
+            shelfSlotLayoutVersion = 1,
             player = CapturePlayer(),
             visualScaleSignature = CurrentVisualScaleSignature
         };
@@ -213,7 +214,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
                     physicalItemId = mediaItem.PhysicalItemId,
                     state = ShelvedState,
                     shelfSectionId = currentShelfSlot.ShelfSectionId,
-                    shelfOrder = shelfOrder
+                    shelfOrder = shelfOrder,
+                    physicalSlot = currentShelfSlot.PhysicalSlotOf(interactable)
                 });
 
                 continue;
@@ -295,7 +297,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             ClearShelfOccupancy(shelvesById.Values);
             HashSet<string> restoredPhysicalIds = new();
             RestoreLooseItems(saveData.looseMediaItems, mediaItemsById, restoredPhysicalIds);
-            RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById, shelvesById, restoredPhysicalIds);
+            RestoreShelvedItems(saveData.shelvedMediaItems, mediaItemsById,
+                shelvesById, restoredPhysicalIds, saveData.shelfSlotLayoutVersion);
 
             // Existing v2 saves may contain only the original 140 slice IDs.
             // Append new catalogue stock without changing those IDs, shelf
@@ -657,7 +660,8 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         List<ShelvedMediaItemSaveData> shelvedItems,
         Dictionary<string, MediaItem> mediaItemsById,
         Dictionary<string, ShelfSlot> shelvesById,
-        HashSet<string> restoredPhysicalIds)
+        HashSet<string> restoredPhysicalIds,
+        int savedShelfLayoutVersion)
     {
         shelvedItems.Sort(CompareShelvedItems);
 
@@ -690,7 +694,12 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
             }
 
             PhysicalInteractable interactable = mediaItem.GetComponent<PhysicalInteractable>();
-            if (interactable == null || !shelf.RestorePlacedItem(interactable))
+            // Old v2 saves used shelfOrder as the physical layer-first index.
+            // New v2 saves additionally store each CD's independent slot so
+            // removing one case no longer shuffles other columns on reload.
+            int physicalSlot = savedShelfLayoutVersion >= 1
+                ? shelvedItem.physicalSlot : shelvedItem.shelfOrder;
+            if (interactable == null || !shelf.RestorePlacedItem(interactable, physicalSlot))
             {
                 Debug.LogWarning($"Could not restore '{shelvedItem.physicalItemId}' to shelf '{shelvedItem.shelfSectionId}'.");
             }
@@ -780,6 +789,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
     private sealed class PrototypeSaveData
     {
         public int version = SaveFormatVersion;
+        public int shelfSlotLayoutVersion; // 0: legacy shelfOrder, 1: fixed facing/depth slots
         public string visualScaleSignature = string.Empty;
         public PlayerSaveData player = new();
         public List<LooseMediaItemSaveData> looseMediaItems = new();
@@ -812,6 +822,7 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         public string state = ShelvedState;
         public string shelfSectionId = string.Empty;
         public int shelfOrder = -1;
+        public int physicalSlot = -1;
     }
 
     private enum LoadMode
