@@ -82,7 +82,7 @@ def main() -> None:
                 home = matching[0]
                 occupancy[home[0]] += 1
                 reference += 1
-            elif total % 8 == 0:
+            elif total % 2 == 0:
                 misplaced += 1
                 # Mirrors FindIncorrectShelf's modulo/first-capacity strategy.
                 destination = next((
