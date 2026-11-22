@@ -82,7 +82,7 @@ public sealed class PrototypeOrganisationHud : MonoBehaviour
         GUI.color = oldColor;
 
         GUI.Label(new Rect(19f, 132f, 580f, 20f),
-            "E: pick up / place / drop     F5: save     F9: reload     Esc: cursor",
+            "E: pick up / place / drop     P: save     O: reload     Esc: cursor",
             detailsStyle);
     }
 }

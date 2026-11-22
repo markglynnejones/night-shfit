@@ -79,12 +79,12 @@ public sealed class PrototypeSaveLoadController : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null)
         {
-            if (keyboard.f5Key.wasPressedThisFrame)
+            if (keyboard.f5Key.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame)
             {
                 SaveGame("Manual save");
             }
 
-            if (keyboard.f9Key.wasPressedThisFrame)
+            if (keyboard.f9Key.wasPressedThisFrame || keyboard.oKey.wasPressedThisFrame)
             {
                 LoadGame(LoadMode.Manual);
             }

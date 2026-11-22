@@ -7,7 +7,7 @@ A first-person, cosy **physical-media sorting game** set in a fictional British 
 1. Open the Game folder as a Unity project using **Unity 6000.5.8f1** (Unity 6.5, URP).
 2. Open Assets/Scenes/Prototype.unity.
 3. Enter **Play** mode. The prototype builds stock, shelving and scenery from original scene templates.
-4. Use **WASD + mouse** to move, **E** to pick up/place/drop, **Esc** to free the cursor, **F5** to save and **F9** to reload.
+4. Use **WASD + mouse** to move, **E** to pick up/place/drop, **Esc** to free the cursor, **P** to save and **O** to reload (also F5/F9 in the desktop Editor).
 5. During Play mode choose **Night Shift > Validate Running Vertical Slice**. The Console should report 40 catalogue entries, 140 unique physical copies and 11 shelving bays.
 6. Follow [the extended test](VERTICAL_SLICE_QA.md).
 
