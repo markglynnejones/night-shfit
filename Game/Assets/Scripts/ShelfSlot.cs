@@ -12,12 +12,17 @@ public sealed class ShelfSlot : MonoBehaviour
     [SerializeField] private float itemSpacing = 0.11f;
     [SerializeField] private int maxItems = 18;
 
-    private static readonly Vector3 ShelvedEulerAngles = new(0f, -90f, 0f);
-    private const float ShelfDepthOffset = 0.34f;
-    private const float HintFrontZ = -0.12f;
-
-    // Small physical cases should sit close together, not 11 cm apart.
-    private const float JewelCaseSpineSpacing = 0.024f;
+    // Reference: real music-shop flip-bins, not bookcases. Covers tilt slightly
+    // towards a standing customer and occupy three staggered front-facing tiers.
+    private static readonly Vector3 ShelvedEulerAngles = new(28f, 0f, 0f);
+    private const int CoversPerTier = 6;
+    private const int TierCount = 3;
+    private const float FirstCoverX = -0.745f;
+    private const float CoverHorizontalSpacing = 0.295f;
+    private const float FirstTierZ = -0.300f;
+    private const float TierDepthSpacing = 0.240f;
+    private const float FirstTierHeight = 0.885f;
+    private const float TierHeightSpacing = 0.100f;
 
     private readonly List<PhysicalInteractable> placedItems = new();
     private GameObject placementHint;
@@ -78,7 +83,10 @@ public sealed class ShelfSlot : MonoBehaviour
 
     public void ConfigureJewelCaseSpacing()
     {
-        itemSpacing = JewelCaseSpineSpacing;
+        // 18 cases across three tiers of six cover-facing slots.
+        // Keep maxItems at or below our geometry's capacity.
+        itemSpacing = CoverHorizontalSpacing;
+        maxItems = Mathf.Min(maxItems, CoversPerTier * TierCount);
     }
 
     public bool TryPlace(PhysicalInteractable item)
@@ -137,8 +145,10 @@ public sealed class ShelfSlot : MonoBehaviour
         int insertionIndex = InsertionIndexFor(placementWorldPoint);
         EnsurePlacementHint();
         Transform referenceTransform = snapPoint != null ? snapPoint : transform;
-        Vector3 hintPosition = LocalOffsetForIndex(insertionIndex, placedItems.Count + 1);
-        hintPosition.z = HintFrontZ;
+        Vector3 hintPosition = LocalOffsetForIndex(
+            Mathf.Clamp(insertionIndex, 0, CoversPerTier * TierCount - 1));
+        hintPosition.y += 0.026f;
+        hintPosition.z -= 0.035f;
 
         placementHint.transform.SetParent(referenceTransform, false);
         placementHint.transform.localPosition = hintPosition;
@@ -226,8 +236,13 @@ public sealed class ShelfSlot : MonoBehaviour
 
     private Vector3 LocalOffsetForIndex(int index, int itemCount)
     {
-        float centeredIndex = index - ((itemCount - 1) * 0.5f);
-        return new Vector3(centeredIndex * itemSpacing, 0f, ShelfDepthOffset);
+        int slot = Mathf.Clamp(index, 0, CoversPerTier * TierCount - 1);
+        int tier = slot / CoversPerTier;
+        int column = slot % CoversPerTier;
+        return new Vector3(
+            FirstCoverX + column * CoverHorizontalSpacing,
+            FirstTierHeight + tier * TierHeightSpacing,
+            FirstTierZ + tier * TierDepthSpacing);
     }
 
     private void EnsurePlacementHint()
@@ -238,8 +253,9 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         placementHint = new GameObject("Placement Hint");
-        CreateHintCube("Placement Hint Spine", new Vector3(0f, 0f, 0f), new Vector3(0.025f, 0.16f, 0.045f), CreateHintMaterial(new Color(0.45f, 0.73f, 0.86f, 1f)));
-        CreateHintCube("Placement Hint Top Tab", new Vector3(0f, 0.095f, -0.015f), new Vector3(0.065f, 0.018f, 0.055f), CreateHintMaterial(new Color(0.82f, 0.88f, 0.9f, 1f)));
+        CreateHintCube("Placement Hint Case Outline",
+            new Vector3(0f, 0f, 0f), new Vector3(0.180f, 0.014f, 0.16f),
+            CreateHintMaterial(new Color(0.54f, 0.78f, 0.76f, 1f)));
         placementHint.SetActive(false);
     }
 
@@ -302,17 +318,17 @@ public sealed class ShelfSlot : MonoBehaviour
         }
 
         Transform referenceTransform = snapPoint != null ? snapPoint : transform;
-        float localX = referenceTransform.InverseTransformPoint(placementWorldPoint).x;
+        Vector3 local = referenceTransform.InverseTransformPoint(placementWorldPoint);
+        int column = Mathf.Clamp(
+            Mathf.RoundToInt((local.x - FirstCoverX) / CoverHorizontalSpacing),
+            0, CoversPerTier - 1);
+        int tier = Mathf.Clamp(
+            Mathf.RoundToInt((local.z - FirstTierZ) / TierDepthSpacing),
+            0, TierCount - 1);
 
-        for (int i = 0; i < placedItems.Count; i++)
-        {
-            if (localX < LocalOffsetForIndex(i).x)
-            {
-                return i;
-            }
-        }
-
-        return placedItems.Count;
+        // The player is choosing a real space within a browsing tray. An
+        // insertion still preserves every other copy's authored order.
+        return Mathf.Min(tier * CoversPerTier + column, placedItems.Count);
     }
 
     private int SortedInsertionIndexFor(PhysicalInteractable item)
