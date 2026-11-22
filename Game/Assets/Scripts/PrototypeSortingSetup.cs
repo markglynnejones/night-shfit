@@ -85,12 +85,95 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
         new(0.70f, 0.015f, 2.20f), new(-0.82f, 0.015f, 2.25f)
     };
 
+    // 52 new fictional artists (two per letter) with four albums each. Six
+    // physical copies per record bring the shop to 1,388 stock items and 248
+    // distinct albums, enough to make seven visible browse rows meaningful.
+    // IMPORTANT: the original 140 slice- IDs are spawned before these records,
+    // so an existing player's save is never renumbered.
+    private static readonly string[] ExpansionArtistPrefixes =
+    {
+        "Ashen", "Broken", "Copper", "Distant", "Electric", "Fading",
+        "Glass", "Hollow", "Ivory", "Juniper", "Kinetic", "Luminous",
+        "Midnight", "Northern", "Orchard", "Paper", "Quiet", "River",
+        "Silver", "Tidal", "Underpass", "Velvet", "Winter", "Xenon",
+        "Yellow", "Zero"
+    };
+    private static readonly string[] ExpansionArtistEndings =
+    {
+        "Signals", "Society"
+    };
+    private static readonly string[] ExpansionAlbumAdjectives =
+    {
+        "Lost", "Satellite", "Summer", "Broken", "Golden", "Paper",
+        "Silent", "Second", "Eastern", "Faint", "Electric", "Midnight",
+        "Ordinary", "Northern", "Worn", "Future"
+    };
+    private static readonly string[] ExpansionAlbumNouns =
+    {
+        "Broadcast", "Windows", "Postcards", "Cities", "Weather",
+        "Headlights", "Maps", "Signals", "Avenues", "Portraits",
+        "Frequency", "Mirrors", "Airwaves", "Polaroids", "Stations",
+        "Cassettes"
+    };
+
+    private sealed class ExpansionPlacement
+    {
+        public string Id;
+        public string ShelfId;
+        public Vector3 LoosePosition;
+        public Quaternion LooseRotation;
+    }
+
+    private static readonly Dictionary<string, ExpansionPlacement>
+        expansionDefaults = new();
+
+    // A v2 save from the 140-CD slice omits newly added stock. Restore those
+    // IDs using the authored shelf/floor positions *after* the existing save
+    // has been fully applied, rather than discarding the player's progress.
+    public static int RestoreMissingExpansionStock(
+        HashSet<string> restoredPhysicalIds,
+        Dictionary<string, MediaItem> mediaItemsById,
+        Dictionary<string, ShelfSlot> shelvesById)
+    {
+        int added = 0;
+        foreach (ExpansionPlacement record in expansionDefaults.Values)
+        {
+            if (restoredPhysicalIds.Contains(record.Id)
+                || !mediaItemsById.TryGetValue(record.Id, out MediaItem media)
+                || media == null)
+            {
+                continue;
+            }
+
+            PhysicalInteractable item = media.GetComponent<PhysicalInteractable>();
+            if (item == null)
+            {
+                continue;
+            }
+
+            bool shelved = !string.IsNullOrEmpty(record.ShelfId)
+                && shelvesById.TryGetValue(record.ShelfId, out ShelfSlot shelf)
+                && shelf.RestorePlacedItem(item);
+
+            if (!shelved)
+            {
+                item.RestoreLooseState(record.LoosePosition, record.LooseRotation);
+            }
+
+            restoredPhysicalIds.Add(record.Id);
+            added++;
+        }
+
+        return added;
+    }
+
     public static event Action SetupCompleted;
     public static bool HasCompletedSetup { get; private set; }
 
     private void Awake()
     {
         HasCompletedSetup = false;
+        expansionDefaults.Clear();
         ResolveTemplates();
 
         if (cdTemplate == null || shelfTemplate == null)
@@ -181,16 +264,115 @@ public sealed class PrototypeSortingSetup : MonoBehaviour
             }
         }
 
+        int expandedCopies = AddExpandedCatalogueStock(shelfSlots, ref looseCount);
+        physicalId += expandedCopies;
+
         if (FindAnyProgressHud() == null)
         {
             new GameObject("Organisation Progress").AddComponent<PrototypeOrganisationHud>();
         }
 
-        Debug.Log("Rock/Indie slice: " + orderedCatalogue.Count + " albums, "
-            + physicalId + " cases, " + shelfSlots.Count + " shelving bays. "
-            + correctlyShelved.Count + " reference copies, "
-            + misfiled.Count + " misfiled copies, " + looseCount + " loose.");
+        Debug.Log("Rock/Indie store: " + (orderedCatalogue.Count + ExpansionArtistPrefixes.Length
+            * ExpansionArtistEndings.Length * 4) + " albums, "
+            + physicalId + " physical cases, " + shelfSlots.Count
+            + " seven-row four-deep browsing racks. "
+            + "Original 140 stock IDs and existing saves retained.");
         CompleteSetup();
+    }
+
+    private int AddExpandedCatalogueStock(List<ShelfSlot> shelves, ref int looseCount)
+    {
+        int ordinal = 0;
+        int extraCount = 0;
+
+        for (int first = 0; first < ExpansionArtistPrefixes.Length; first++)
+        {
+            for (int ending = 0; ending < ExpansionArtistEndings.Length; ending++)
+            {
+                string artist = ExpansionArtistPrefixes[first] + " "
+                    + ExpansionArtistEndings[ending];
+
+                for (int albumNumber = 0; albumNumber < 4; albumNumber++)
+                {
+                    int adjectiveIndex = (first * 3 + ending * 5 + albumNumber * 7)
+                        % ExpansionAlbumAdjectives.Length;
+                    int nounIndex = (first * 5 + ending * 11 + albumNumber * 9)
+                        % ExpansionAlbumNouns.Length;
+                    string title = ExpansionAlbumAdjectives[adjectiveIndex] + " "
+                        + ExpansionAlbumNouns[nounIndex];
+                    string genre = (first + ending + albumNumber) % 2 == 0
+                        ? "Rock" : "Indie";
+                    string catalogueId = "exp-release-"
+                        + first.ToString("D2") + "-" + ending + "-" + albumNumber;
+
+                    AlbumDefinition album = ScriptableObject.CreateInstance<AlbumDefinition>();
+                    album.name = catalogueId;
+                    album.ConfigureRuntime(catalogueId, artist, title, genre);
+
+                    // Six copies give meaningful duplicates without making
+                    // every four-deep face contain the very same album.
+                    for (int copy = 0; copy < 6; copy++)
+                    {
+                        ordinal++;
+                        extraCount++;
+
+                        GameObject cd = Instantiate(cdTemplate.gameObject);
+                        string id = "expanded-" + ordinal.ToString("D4");
+                        ConfigureCd(cd, album, id);
+                        PhysicalInteractable physical = cd.GetComponent<PhysicalInteractable>();
+
+                        // Every stock item has an authored fallback, even if
+                        // its intended starting shelf fills in a future edit.
+                        PileSpot fallbackSpot = Piles[(looseCount + ordinal * 7) % Piles.Length];
+                        int fallbackLayer = (looseCount + ordinal) / Piles.Length;
+                        Vector3 fallback = new(
+                            fallbackSpot.X,
+                            fallbackSpot.Y + fallbackLayer * PileLayerSpacing,
+                            fallbackSpot.Z);
+                        Quaternion rotation = Quaternion.Euler(90f,
+                            ((ordinal * 29) % 29) - 14f, 0f);
+                        ExpansionPlacement record = new()
+                        {
+                            Id = id,
+                            LoosePosition = fallback,
+                            LooseRotation = rotation
+                        };
+                        expansionDefaults.Add(id, record);
+
+                        bool shouldBeLoose = ordinal % 6 == 0;
+                        bool correctReference = ordinal % 9 == 0;
+                        ShelfSlot desiredShelf = shouldBeLoose ? null
+                            : correctReference ? FindCorrectShelf(album, shelves)
+                            : FindIncorrectShelf(album, shelves, ordinal);
+
+                        if (desiredShelf != null
+                            && desiredShelf.TryPlaceStartingItem(physical, !correctReference))
+                        {
+                            record.ShelfId = desiredShelf.ShelfSectionId;
+                        }
+                        else
+                        {
+                            // Separate repeat piles from the original 60 to
+                            // keep their starting transforms accessible.
+                            PileSpot spot = Piles[looseCount % Piles.Length];
+                            int layer = looseCount / Piles.Length;
+                            record.LoosePosition = new Vector3(spot.X,
+                                spot.Y + layer * PileLayerSpacing, spot.Z);
+                            record.LooseRotation = Quaternion.Euler(90f,
+                                (ordinal * 13) % 27 - 13f, 0f);
+                            cd.transform.SetPositionAndRotation(
+                                record.LoosePosition, record.LooseRotation);
+                            physical.SettleLooseStock();
+                            looseCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        Debug.Log("Expanded stock added: " + extraCount
+            + " new physical cases, while preserving slice-0001..0140.");
+        return extraCount;
     }
 
     private static PrototypeOrganisationHud FindAnyProgressHud()
