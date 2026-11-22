@@ -67,3 +67,11 @@ The cover in the on-screen UI is taken from the existing **shared 256px texture*
 The player now uses the camera's **exact viewport-centre ray** for CD pickup, rack placement and browsing. A direct pickup respects the closest solid collider, with only 2 cm of fallback aim forgiveness. Rack interactions map the visible case nearest the centre ray, not the misleading entry point of the large invisible placement trigger. Obstacles must be visible rather than allowing interaction with stock hidden behind walls or unrelated furniture.
 
 The crosshair is green when aimed at a CD, pale blue for a rack and white when there is no available interaction. A compact near-centre label names the pickup action so the bottom-right **selected carried album** information is no longer mistaken for the target currently under the crosshair. No changes to case scale, shelves, physical behaviour, or saves.
+
+## Independent four-deep CD positions and seven-row aim (follow-up)
+
+Each rack still has seven rows and nine album-facing positions per row, with up to four **separate physical cases behind each position**. Picking up a CD moves only the cases behind that specific facing forward. The rest of the row and the other six rows stay exactly where they were. Putting a CD into a position places it at the front, pushing only the other cases in that facing backwards (up to four). Scrolling empty-handed cycles just that facing.
+
+This replaces the old flattened arrangement where removing one case reshuffled everything after it. Each physical case now has a fixed rack slot number, stored alongside its existing shelf section and order in backward-compatible version-2 saves. Previously saved version-2 shops are interpreted using their original shelf order, preserving your existing CDs and progress. The in-Editor **Night Shift → Validate Running Vertical Slice** command also checks that no rack has duplicate physical positions or gaps behind a removed case.
+
+Shelf targeting is no longer dependent on the oversized invisible placement trigger. The camera-centre ray compares the actual CD facing positions in all eleven racks, making all seven rows available even if the old trigger doesn't intersect the crosshair. Walls and unrelated furniture remain solid obstructions. No physical case dimensions, carry capacity or scene geometry were changed.
