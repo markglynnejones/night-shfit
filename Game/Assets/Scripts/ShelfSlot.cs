@@ -444,48 +444,91 @@ public sealed class ShelfSlot : MonoBehaviour
         return tier * CoversPerTier + column;
     }
 
-    // Resolve the actual visible facing from the player's centre-screen ray,
-    // rather than the front surface of the oversized invisible trigger box.
-    // Perspective makes the hit on that box substantially lower/closer than
-    // the CD being aimed at, which previously chose the wrong row.
+    // Test the ACTUAL front-cover rectangle instead of the distance to an
+    // approximate face centre. Seven rows are close together, so the former
+    // 16cm-radius centre test could steal aim from neighbouring rows.
+    // Pick the first visible cover plane crossed by the centre-screen ray.
     public bool TryGetAimedFacePoint(Ray sightLine, float maxDistance,
         out Vector3 worldFacingPoint)
     {
         worldFacingPoint = Vector3.zero;
         Transform reference = snapPoint != null ? snapPoint : transform;
-        int closestFace = -1;
-        const float maximumCentreMiss = 0.16f;
-        float bestMissSquared = maximumCentreMiss * maximumCentreMiss;
+        Quaternion caseRotation = reference.rotation * Quaternion.Euler(ShelvedEulerAngles);
+        Quaternion inverseCaseRotation = Quaternion.Inverse(caseRotation);
+        Vector3 coverNormal = caseRotation * Vector3.back;
+        float denominator = Vector3.Dot(sightLine.direction, coverNormal);
 
-        for (int face = 0; face < FacesPerLayer; face++)
-        {
-            Vector3 centre = reference.TransformPoint(LocalOffsetForIndex(face));
-            float distance = Vector3.Dot(centre - sightLine.origin,
-                sightLine.direction);
-            if (distance <= 0.12f || distance > maxDistance)
-            {
-                continue;
-            }
-
-            Vector3 onRay = sightLine.GetPoint(distance);
-            float missSquared = (onRay - centre).sqrMagnitude;
-            if (missSquared >= bestMissSquared)
-            {
-                continue;
-            }
-
-            bestMissSquared = missSquared;
-            closestFace = face;
-        }
-
-        if (closestFace < 0)
+        // Covers are browsed from the front of the rack, not through its back.
+        if (denominator >= -0.05f)
         {
             return false;
         }
 
-        worldFacingPoint = reference.TransformPoint(
-            LocalOffsetForIndex(closestFace));
+        // The case is roughly 17.2 x 13.6 cm. The small border allowance
+        // makes aiming at realistic-sized cases usable without crossing into
+        // the next row (unlike the previous 16cm spherical tolerance).
+        const float halfCoverWidth = 0.103f;
+        const float halfCoverHeight = 0.076f;
+        const float coverFrontOffset = 0.008f;
+        float nearestHitDistance = float.MaxValue;
+        int bestFace = -1;
+
+        for (int face = 0; face < FacesPerLayer; face++)
+        {
+            Vector3 centre = reference.TransformPoint(LocalOffsetForIndex(face));
+            Vector3 frontPlaneCentre = centre + coverNormal * coverFrontOffset;
+            float hitDistance = Vector3.Dot(
+                frontPlaneCentre - sightLine.origin, coverNormal) / denominator;
+            if (hitDistance <= 0.12f || hitDistance >= nearestHitDistance
+                || hitDistance > maxDistance)
+            {
+                continue;
+            }
+
+            Vector3 pointOnCover = sightLine.GetPoint(hitDistance);
+            Vector3 localOnCover = inverseCaseRotation
+                * (pointOnCover - frontPlaneCentre);
+            if (Mathf.Abs(localOnCover.x) > halfCoverWidth
+                || Mathf.Abs(localOnCover.y) > halfCoverHeight)
+            {
+                continue;
+            }
+
+            nearestHitDistance = hitDistance;
+            bestFace = face;
+        }
+
+        if (bestFace < 0)
+        {
+            return false;
+        }
+
+        worldFacingPoint = reference.TransformPoint(LocalOffsetForIndex(bestFace));
         return true;
+    }
+
+    // Share the same exact face mapping with pickup prompts and in-Editor tests.
+    public Vector3 GetWorldFacingCentre(int row, int column)
+    {
+        int face = Mathf.Clamp(row, 0, TierCount - 1) * CoversPerTier
+            + Mathf.Clamp(column, 0, CoversPerTier - 1);
+        Transform reference = snapPoint != null ? snapPoint : transform;
+        return reference.TransformPoint(LocalOffsetForIndex(face));
+    }
+
+    public int RowNumberForPoint(Vector3 worldFacingPoint)
+    {
+        return FaceIndexForPoint(worldFacingPoint) / CoversPerTier + 1;
+    }
+
+    public int ColumnNumberForPoint(Vector3 worldFacingPoint)
+    {
+        return FaceIndexForPoint(worldFacingPoint) % CoversPerTier + 1;
+    }
+
+    public int CountAtFacing(Vector3 worldFacingPoint)
+    {
+        return CountInFace(FaceIndexForPoint(worldFacingPoint));
     }
 
     // Let the interaction UI identify the front-facing CD and show how

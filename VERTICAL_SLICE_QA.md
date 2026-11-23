@@ -101,3 +101,17 @@ These are real Unity interaction tests; passing GitHub source checks alone does 
 - [ ] The colour/action prompt should match the CD, shelf or empty space directly under the centre dot.
 
 GitHub tests verify structural rules, but only these Unity tests can confirm the row-by-row feel and saved game behaviour.
+
+## Targeting regression: row 4 and parts of row 3
+
+- [ ] Back up your `prototype-save.json` and `.bak` before testing this revision.
+- [ ] In Play mode, aim at the **third and fourth rows** from the bottom on three different racks. The near-centre prompt must show `ROW 3` or `ROW 4`, never the neighbouring row.
+- [ ] On each row, test columns 1, 5 and 9. Check the displayed row/column and `n/4 CDS` count.
+- [ ] Pick up a front CD using **E** with empty hands. Only the deeper copies in that exact position should move forward; other rows/columns stay fixed.
+- [ ] With a CD already carried, aim at another stocked position. **E collects another CD** while your stack has space; **Shift+E shelves the selected CD**. Both target the row/column shown by the prompt.
+- [ ] Check a facing reading `4/4 CDS`: shelving must be refused with a visible full message. Pick a case up first, then shelve.
+- [ ] Empty-handed wheel flipping moves only the targeted four-deep position.
+- [ ] In Unity, choose **Night Shift > Validate Running Vertical Slice**. It now tests 7 rows × 3 columns × 3 vertical aim positions on each of the 11 racks, besides checking stock identities and physical-slot gaps.
+- [ ] Repeat from both normal standing distance and close to the rack, then press P and O to confirm exact placement persists.
+
+This is a sightline and input repair, not a change to case sizes, stock counts, or saved shelf positions. Confirm the visual behaviour locally; GitHub source tests are not a Unity compilation run.

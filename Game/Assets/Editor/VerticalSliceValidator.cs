@@ -112,6 +112,11 @@ public static class VerticalSliceValidator
             shelved += shelf.ItemCount;
             correctlyOrganised += shelf.CountCorrectlyOrganisedItems();
 
+            // Test a centre-camera ray against three columns in every row,
+            // including the player's troublesome rows 3 and 4. This does
+            // not move any CDs or change the world/save state.
+            failures += CheckSevenRowAimGeometry(shelf);
+
             if (string.IsNullOrWhiteSpace(shelf.ShelfSectionId)
                 || !shelfIds.Add(shelf.ShelfSectionId))
             {
@@ -180,6 +185,49 @@ public static class VerticalSliceValidator
         {
             Debug.LogError("Vertical slice validation failed: " + failures + " issue(s).");
         }
+    }
+
+    private static int CheckSevenRowAimGeometry(ShelfSlot shelf)
+    {
+        int failures = 0;
+        Transform section = shelf.transform.parent != null
+            ? shelf.transform.parent : shelf.transform;
+
+        for (int row = 0; row < ShelfSlot.TierCount; row++)
+        {
+            for (int column = 0; column < ShelfSlot.CoversPerTier; column += 4)
+            {
+                Vector3 centre = shelf.GetWorldFacingCentre(row, column);
+                float localX = section.InverseTransformPoint(centre).x;
+                Vector3 eye = section.TransformPoint(new Vector3(
+                    localX, 1.65f, -1.35f));
+
+                // Aim at three points on the cover, not just its middle.
+                // A narrow upper/lower target must still resolve to the
+                // correct row, especially rows 3 and 4.
+                for (int sample = -1; sample <= 1; sample++)
+                {
+                    Vector3 aim = centre + section.TransformDirection(
+                        Quaternion.Euler(28f, 0f, 0f) * Vector3.up)
+                        * (sample * 0.025f);
+                    Ray sight = new Ray(eye, (aim - eye).normalized);
+                    bool hit = shelf.TryGetAimedFacePoint(sight, 3.5f,
+                        out Vector3 selected);
+                    if (!hit
+                        || shelf.RowNumberForPoint(selected) != row + 1
+                        || shelf.ColumnNumberForPoint(selected) != column + 1)
+                    {
+                        Debug.LogError("Shelf cover aim missed row "
+                            + (row + 1) + ", column " + (column + 1)
+                            + " in " + shelf.ShelfSectionId
+                            + " (test sample " + sample + ").");
+                        failures++;
+                    }
+                }
+            }
+        }
+
+        return failures;
     }
 }
 #endif

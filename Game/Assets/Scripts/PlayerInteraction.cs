@@ -21,6 +21,9 @@ public sealed class PlayerInteraction : MonoBehaviour
     private MediaItem inspectedMedia;
     private PhysicalInteractable aimedItem;
     private ShelfSlot aimedShelf;
+    private int aimedRowNumber;
+    private int aimedColumnNumber;
+    private int aimedFacingCount;
     private int hoveredColumnCount;
     private GUIStyle inspectHeaderStyle;
     private GUIStyle inspectArtistStyle;
@@ -94,7 +97,13 @@ public sealed class PlayerInteraction : MonoBehaviour
         PhysicalInteractable lookedAt = FindLookedAtInteractable();
         aimedItem = lookedAt;
         aimedShelf = TryFindLookedAtShelfSlot(out ShelfSlot visibleRack,
-            out _) ? visibleRack : null;
+            out Vector3 visibleFacePoint) ? visibleRack : null;
+        aimedRowNumber = aimedShelf != null
+            ? aimedShelf.RowNumberForPoint(visibleFacePoint) : 0;
+        aimedColumnNumber = aimedShelf != null
+            ? aimedShelf.ColumnNumberForPoint(visibleFacePoint) : 0;
+        aimedFacingCount = aimedShelf != null
+            ? aimedShelf.CountAtFacing(visibleFacePoint) : 0;
         PhysicalInteractable selected = SelectedItem;
 
         // Stable focus while carrying: the card describes the SELECTED CD,
@@ -289,6 +298,29 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         if (direct != null)
         {
+            // An angled case from the neighbouring tier can overlap the
+            // crosshair's narrow physics ray. For a stocked browsing rack,
+            // use the very same cover-plane target as insertion and flipping
+            // so the pickup prompt and E key agree about the CD's row.
+            if (direct.CurrentShelfSlot != null
+                && TryFindLookedAtShelfSlot(out ShelfSlot directRack,
+                    out Vector3 directFacingPoint)
+                && directRack == direct.CurrentShelfSlot)
+            {
+                // A case protruding from a neighbouring row can intersect the
+                // physics ray even when we are aiming at an EMPTY cover space.
+                // Treat that position as empty: let E shelve there instead of
+                // collecting the unintended neighbouring CD.
+                if (!directRack.TryGetFrontCaseAt(directFacingPoint,
+                    out PhysicalInteractable visibleFront, out _))
+                {
+                    return null;
+                }
+
+                return visibleFront != null && !visibleFront.IsHeld
+                    ? visibleFront : null;
+            }
+
             return direct;
         }
 
@@ -318,14 +350,28 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         if (nearCase != null)
         {
+            if (nearCase.CurrentShelfSlot != null
+                && TryFindLookedAtShelfSlot(out ShelfSlot nearRack,
+                    out Vector3 nearFacingPoint)
+                && nearRack == nearCase.CurrentShelfSlot)
+            {
+                if (!nearRack.TryGetFrontCaseAt(nearFacingPoint,
+                    out PhysicalInteractable visibleNearFront, out _))
+                {
+                    return null;
+                }
+
+                return visibleNearFront != null && !visibleNearFront.IsHeld
+                    ? visibleNearFront : null;
+            }
+
             return nearCase;
         }
 
         // A shallow browse-bin lip can hide a case collider. Only resolve
         // the front case if the crosshair is genuinely near a visible facing,
         // never by guessing from the large trigger's entry-point height.
-        if (carriedItems.Count == 0
-            && TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 facePoint)
+        if (TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 facePoint)
             && shelf.TryGetFrontCaseAt(facePoint,
                 out PhysicalInteractable front, out _)
             && front != null && !front.IsHeld)
@@ -352,7 +398,6 @@ public sealed class PlayerInteraction : MonoBehaviour
         }
 
         Ray ray = CentreScreenRay();
-        float bestMissSquared = float.MaxValue;
         float bestDistance = float.MaxValue;
 
         // A thick shelf trigger is hit at a different height from the CD
@@ -374,17 +419,16 @@ public sealed class PlayerInteraction : MonoBehaviour
                 continue;
             }
 
-            float missSquared = Vector3.Cross(ray.direction, offset).sqrMagnitude;
-            if (missSquared > bestMissSquared + 0.0001f
-                || (Mathf.Abs(missSquared - bestMissSquared) <= 0.0001f
-                    && distance >= bestDistance))
+            // Cover-plane intersection already proved the ray crosses this
+            // facing. Choose the closest visible rack, not the rack whose
+            // centre is closest to the ray while physically further away.
+            if (distance >= bestDistance)
             {
                 continue;
             }
 
             closestShelfSlot = shelf;
             closestHitPoint = facingPoint;
-            bestMissSquared = missSquared;
             bestDistance = distance;
         }
 
@@ -545,45 +589,57 @@ public sealed class PlayerInteraction : MonoBehaviour
 
     private void DrawAimPrompt()
     {
-        string message = null;
-        if (aimedItem != null)
-        {
-            MediaItem media = aimedItem.GetComponent<MediaItem>();
-            AlbumDefinition album = media != null ? media.AlbumDefinition : null;
-            string artist = album != null ? album.ArtistName : "CD";
-            if (carriedItems.Count < MaxCarryItems)
-            {
-                message = "E  PICK UP  " + artist;
-                if (SelectedItem != null && aimedShelf != null)
-                {
-                    message += "     SHIFT+E  SHELVE";
-                }
-            }
-            else if (aimedShelf != null)
-            {
-                message = "E  SHELVE SELECTED CD";
-            }
-        }
-        else if (aimedShelf != null && SelectedItem != null)
-        {
-            message = "E  SHELVE SELECTED CD";
-        }
-
-        if (string.IsNullOrEmpty(message))
+        if (aimedItem == null && aimedShelf == null)
         {
             return;
         }
 
-        const float maxWidth = 320f;
+        // The row + column readout is deliberate during the seven-row
+        // playtest: a physical facing that is full should never look like
+        // a broken input, and a missed row should be easy to report.
+        string location = aimedShelf != null
+            ? "ROW " + aimedRowNumber + " / 7  ·  COL " + aimedColumnNumber
+                + "  ·  " + aimedFacingCount + "/4 CDS"
+            : aimedItem != null && aimedItem.CurrentShelfSlot != null
+                ? "CD ON RACK  ·  NO ROW TARGET"
+                : "LOOSE CD";
+
+        string action;
+        if (aimedItem != null && carriedItems.Count < MaxCarryItems)
+        {
+            action = SelectedItem != null && aimedShelf != null
+                ? "E  PICK UP   ·   SHIFT+E  SHELVE"
+                : "E  PICK UP   ·   Q  INSPECT";
+        }
+        else if (aimedShelf != null && SelectedItem != null)
+        {
+            action = aimedFacingCount >= ShelfSlot.MaxDepth
+                ? "POSITION FULL  ·  PICK ANOTHER COLUMN"
+                : "E  SHELVE SELECTED CD";
+        }
+        else if (aimedShelf != null)
+        {
+            action = "WHEEL  BROWSE CD STACK";
+        }
+        else
+        {
+            action = "Q  INSPECT";
+        }
+
+        const float maxWidth = 360f;
         float width = Mathf.Min(maxWidth, Screen.width - 24f);
         float x = Mathf.Clamp(Screen.width * 0.5f + 13f,
             8f, Screen.width - width - 8f);
-        float y = Mathf.Clamp(Screen.height * 0.5f + 11f,
-            8f, Screen.height - 34f);
-        DrawPanel(new Rect(x, y, width, 27f),
-            new Color(0.06f, 0.12f, 0.14f, 0.91f));
-        GUI.Label(new Rect(x + 8f, y + 3f, width - 16f, 21f),
-            FitText(message, albumDetailStyle, width - 16f), albumDetailStyle);
+        float y = Mathf.Clamp(Screen.height * 0.5f + 12f,
+            8f, Screen.height - 54f);
+        DrawPanel(new Rect(x, y, width, 46f),
+            new Color(0.06f, 0.12f, 0.14f, 0.93f));
+
+        GUI.Label(new Rect(x + 8f, y + 3f, width - 16f, 19f),
+            FitText(location, stackSelectedStyle, width - 16f),
+            stackSelectedStyle);
+        GUI.Label(new Rect(x + 8f, y + 23f, width - 16f, 20f),
+            FitText(action, albumDetailStyle, width - 16f), albumDetailStyle);
     }
 
     private void DrawAlbumCard(MediaItem media)
