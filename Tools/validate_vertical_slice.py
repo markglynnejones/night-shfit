@@ -450,6 +450,9 @@ def main() -> None:
             "Unity in-Editor validator must exercise every row, including 3 and 4")
     require("RowNumberForPoint(" in shelf and "aimedFacingCount" in player,
             "The crosshair must reveal target row and four-deep capacity")
+    require("if (!directRack.TryGetFrontCaseAt(directFacingPoint," in player
+            and "if (!nearRack.TryGetFrontCaseAt(nearFacingPoint," in player,
+            "A CD protruding from another tier must not hijack empty-facing pickup")
     validate_cover_surface_geometry(shelf)
 
     require("stock.Length != 1388" in validator and "shelf.Capacity != 252" in validator,
