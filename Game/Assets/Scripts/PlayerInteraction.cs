@@ -305,12 +305,20 @@ public sealed class PlayerInteraction : MonoBehaviour
             if (direct.CurrentShelfSlot != null
                 && TryFindLookedAtShelfSlot(out ShelfSlot directRack,
                     out Vector3 directFacingPoint)
-                && directRack == direct.CurrentShelfSlot
-                && directRack.TryGetFrontCaseAt(directFacingPoint,
-                    out PhysicalInteractable visibleFront, out _)
-                && visibleFront != null && !visibleFront.IsHeld)
+                && directRack == direct.CurrentShelfSlot)
             {
-                return visibleFront;
+                // A case protruding from a neighbouring row can intersect the
+                // physics ray even when we are aiming at an EMPTY cover space.
+                // Treat that position as empty: let E shelve there instead of
+                // collecting the unintended neighbouring CD.
+                if (!directRack.TryGetFrontCaseAt(directFacingPoint,
+                    out PhysicalInteractable visibleFront, out _))
+                {
+                    return null;
+                }
+
+                return visibleFront != null && !visibleFront.IsHeld
+                    ? visibleFront : null;
             }
 
             return direct;
@@ -345,12 +353,16 @@ public sealed class PlayerInteraction : MonoBehaviour
             if (nearCase.CurrentShelfSlot != null
                 && TryFindLookedAtShelfSlot(out ShelfSlot nearRack,
                     out Vector3 nearFacingPoint)
-                && nearRack == nearCase.CurrentShelfSlot
-                && nearRack.TryGetFrontCaseAt(nearFacingPoint,
-                    out PhysicalInteractable visibleNearFront, out _)
-                && visibleNearFront != null && !visibleNearFront.IsHeld)
+                && nearRack == nearCase.CurrentShelfSlot)
             {
-                return visibleNearFront;
+                if (!nearRack.TryGetFrontCaseAt(nearFacingPoint,
+                    out PhysicalInteractable visibleNearFront, out _))
+                {
+                    return null;
+                }
+
+                return visibleNearFront != null && !visibleNearFront.IsHeld
+                    ? visibleNearFront : null;
             }
 
             return nearCase;
