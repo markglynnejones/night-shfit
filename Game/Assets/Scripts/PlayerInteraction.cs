@@ -577,56 +577,57 @@ public sealed class PlayerInteraction : MonoBehaviour
 
     private void DrawAimPrompt()
     {
-        string message = null;
-        string facing = aimedRowNumber > 0
-            ? "ROW " + aimedRowNumber + " / 7   ·   "
-                + aimedFacingCount + "/4 CDS   ·   " : string.Empty;
-
-        if (aimedItem != null)
-        {
-            MediaItem media = aimedItem.GetComponent<MediaItem>();
-            AlbumDefinition album = media != null ? media.AlbumDefinition : null;
-            string artist = album != null ? album.ArtistName : "CD";
-            bool isAimedRackCase = aimedShelf != null
-                && aimedItem.CurrentShelfSlot == aimedShelf;
-            if (carriedItems.Count < MaxCarryItems)
-            {
-                message = (isAimedRackCase ? facing : string.Empty)
-                    + "E  PICK UP  " + artist;
-                if (SelectedItem != null && aimedShelf != null)
-                {
-                    message += "     SHIFT+E  SHELVE";
-                }
-            }
-            else if (aimedShelf != null)
-            {
-                message = facing + "E  SHELVE SELECTED CD";
-            }
-        }
-        else if (aimedShelf != null)
-        {
-            message = facing + (SelectedItem != null
-                ? aimedFacingCount >= ShelfSlot.MaxDepth
-                    ? "POSITION FULL"
-                    : "E  SHELVE SELECTED CD"
-                : "WHEEL  BROWSE CD STACK");
-        }
-
-        if (string.IsNullOrEmpty(message))
+        if (aimedItem == null && aimedShelf == null)
         {
             return;
         }
 
-        const float maxWidth = 350f;
+        // The row + column readout is deliberate during the seven-row
+        // playtest: a physical facing that is full should never look like
+        // a broken input, and a missed row should be easy to report.
+        string location = aimedShelf != null
+            ? "ROW " + aimedRowNumber + " / 7  ·  COL " + aimedColumnNumber
+                + "  ·  " + aimedFacingCount + "/4 CDS"
+            : aimedItem != null && aimedItem.CurrentShelfSlot != null
+                ? "CD ON RACK  ·  NO ROW TARGET"
+                : "LOOSE CD";
+
+        string action;
+        if (aimedItem != null && carriedItems.Count < MaxCarryItems)
+        {
+            action = SelectedItem != null && aimedShelf != null
+                ? "E  PICK UP   ·   SHIFT+E  SHELVE"
+                : "E  PICK UP   ·   Q  INSPECT";
+        }
+        else if (aimedShelf != null && SelectedItem != null)
+        {
+            action = aimedFacingCount >= ShelfSlot.MaxDepth
+                ? "POSITION FULL  ·  PICK ANOTHER COLUMN"
+                : "E  SHELVE SELECTED CD";
+        }
+        else if (aimedShelf != null)
+        {
+            action = "WHEEL  BROWSE CD STACK";
+        }
+        else
+        {
+            action = "Q  INSPECT";
+        }
+
+        const float maxWidth = 360f;
         float width = Mathf.Min(maxWidth, Screen.width - 24f);
         float x = Mathf.Clamp(Screen.width * 0.5f + 13f,
             8f, Screen.width - width - 8f);
-        float y = Mathf.Clamp(Screen.height * 0.5f + 11f,
-            8f, Screen.height - 34f);
-        DrawPanel(new Rect(x, y, width, 27f),
-            new Color(0.06f, 0.12f, 0.14f, 0.91f));
-        GUI.Label(new Rect(x + 8f, y + 3f, width - 16f, 21f),
-            FitText(message, albumDetailStyle, width - 16f), albumDetailStyle);
+        float y = Mathf.Clamp(Screen.height * 0.5f + 12f,
+            8f, Screen.height - 54f);
+        DrawPanel(new Rect(x, y, width, 46f),
+            new Color(0.06f, 0.12f, 0.14f, 0.93f));
+
+        GUI.Label(new Rect(x + 8f, y + 3f, width - 16f, 19f),
+            FitText(location, stackSelectedStyle, width - 16f),
+            stackSelectedStyle);
+        GUI.Label(new Rect(x + 8f, y + 23f, width - 16f, 20f),
+            FitText(action, albumDetailStyle, width - 16f), albumDetailStyle);
     }
 
     private void DrawAlbumCard(MediaItem media)
