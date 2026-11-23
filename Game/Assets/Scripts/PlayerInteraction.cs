@@ -21,6 +21,8 @@ public sealed class PlayerInteraction : MonoBehaviour
     private MediaItem inspectedMedia;
     private PhysicalInteractable aimedItem;
     private ShelfSlot aimedShelf;
+    private int aimedRowNumber;
+    private int aimedColumnNumber;
     private int hoveredColumnCount;
     private GUIStyle inspectHeaderStyle;
     private GUIStyle inspectArtistStyle;
@@ -94,7 +96,11 @@ public sealed class PlayerInteraction : MonoBehaviour
         PhysicalInteractable lookedAt = FindLookedAtInteractable();
         aimedItem = lookedAt;
         aimedShelf = TryFindLookedAtShelfSlot(out ShelfSlot visibleRack,
-            out _) ? visibleRack : null;
+            out Vector3 visibleFacePoint) ? visibleRack : null;
+        aimedRowNumber = aimedShelf != null
+            ? aimedShelf.RowNumberForPoint(visibleFacePoint) : 0;
+        aimedColumnNumber = aimedShelf != null
+            ? aimedShelf.ColumnNumberForPoint(visibleFacePoint) : 0;
         PhysicalInteractable selected = SelectedItem;
 
         // Stable focus while carrying: the card describes the SELECTED CD,
@@ -289,6 +295,21 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         if (direct != null)
         {
+            // An angled case from the neighbouring tier can overlap the
+            // crosshair's narrow physics ray. For a stocked browsing rack,
+            // use the very same cover-plane target as insertion and flipping
+            // so the pickup prompt and E key agree about the CD's row.
+            if (direct.CurrentShelfSlot != null
+                && TryFindLookedAtShelfSlot(out ShelfSlot directRack,
+                    out Vector3 directFacingPoint)
+                && directRack == direct.CurrentShelfSlot
+                && directRack.TryGetFrontCaseAt(directFacingPoint,
+                    out PhysicalInteractable visibleFront, out _)
+                && visibleFront != null && !visibleFront.IsHeld)
+            {
+                return visibleFront;
+            }
+
             return direct;
         }
 
@@ -318,14 +339,24 @@ public sealed class PlayerInteraction : MonoBehaviour
 
         if (nearCase != null)
         {
+            if (nearCase.CurrentShelfSlot != null
+                && TryFindLookedAtShelfSlot(out ShelfSlot nearRack,
+                    out Vector3 nearFacingPoint)
+                && nearRack == nearCase.CurrentShelfSlot
+                && nearRack.TryGetFrontCaseAt(nearFacingPoint,
+                    out PhysicalInteractable visibleNearFront, out _)
+                && visibleNearFront != null && !visibleNearFront.IsHeld)
+            {
+                return visibleNearFront;
+            }
+
             return nearCase;
         }
 
         // A shallow browse-bin lip can hide a case collider. Only resolve
         // the front case if the crosshair is genuinely near a visible facing,
         // never by guessing from the large trigger's entry-point height.
-        if (carriedItems.Count == 0
-            && TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 facePoint)
+        if (TryFindLookedAtShelfSlot(out ShelfSlot shelf, out Vector3 facePoint)
             && shelf.TryGetFrontCaseAt(facePoint,
                 out PhysicalInteractable front, out _)
             && front != null && !front.IsHeld)
@@ -352,7 +383,6 @@ public sealed class PlayerInteraction : MonoBehaviour
         }
 
         Ray ray = CentreScreenRay();
-        float bestMissSquared = float.MaxValue;
         float bestDistance = float.MaxValue;
 
         // A thick shelf trigger is hit at a different height from the CD
@@ -374,17 +404,16 @@ public sealed class PlayerInteraction : MonoBehaviour
                 continue;
             }
 
-            float missSquared = Vector3.Cross(ray.direction, offset).sqrMagnitude;
-            if (missSquared > bestMissSquared + 0.0001f
-                || (Mathf.Abs(missSquared - bestMissSquared) <= 0.0001f
-                    && distance >= bestDistance))
+            // Cover-plane intersection already proved the ray crosses this
+            // facing. Choose the closest visible rack, not the rack whose
+            // centre is closest to the ray while physically further away.
+            if (distance >= bestDistance)
             {
                 continue;
             }
 
             closestShelfSlot = shelf;
             closestHitPoint = facingPoint;
-            bestMissSquared = missSquared;
             bestDistance = distance;
         }
 
@@ -546,14 +575,20 @@ public sealed class PlayerInteraction : MonoBehaviour
     private void DrawAimPrompt()
     {
         string message = null;
+        string facing = aimedRowNumber > 0
+            ? "ROW " + aimedRowNumber + " / 7   ·   " : string.Empty;
+
         if (aimedItem != null)
         {
             MediaItem media = aimedItem.GetComponent<MediaItem>();
             AlbumDefinition album = media != null ? media.AlbumDefinition : null;
             string artist = album != null ? album.ArtistName : "CD";
+            bool isAimedRackCase = aimedShelf != null
+                && aimedItem.CurrentShelfSlot == aimedShelf;
             if (carriedItems.Count < MaxCarryItems)
             {
-                message = "E  PICK UP  " + artist;
+                message = (isAimedRackCase ? facing : string.Empty)
+                    + "E  PICK UP  " + artist;
                 if (SelectedItem != null && aimedShelf != null)
                 {
                     message += "     SHIFT+E  SHELVE";
@@ -561,12 +596,14 @@ public sealed class PlayerInteraction : MonoBehaviour
             }
             else if (aimedShelf != null)
             {
-                message = "E  SHELVE SELECTED CD";
+                message = facing + "E  SHELVE SELECTED CD";
             }
         }
-        else if (aimedShelf != null && SelectedItem != null)
+        else if (aimedShelf != null)
         {
-            message = "E  SHELVE SELECTED CD";
+            message = facing + (SelectedItem != null
+                ? "E  SHELVE SELECTED CD"
+                : "WHEEL  BROWSE CD STACK");
         }
 
         if (string.IsNullOrEmpty(message))
@@ -574,7 +611,7 @@ public sealed class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        const float maxWidth = 320f;
+        const float maxWidth = 350f;
         float width = Mathf.Min(maxWidth, Screen.width - 24f);
         float x = Mathf.Clamp(Screen.width * 0.5f + 13f,
             8f, Screen.width - width - 8f);
