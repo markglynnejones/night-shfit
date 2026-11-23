@@ -23,6 +23,7 @@ public sealed class PlayerInteraction : MonoBehaviour
     private ShelfSlot aimedShelf;
     private int aimedRowNumber;
     private int aimedColumnNumber;
+    private int aimedFacingCount;
     private int hoveredColumnCount;
     private GUIStyle inspectHeaderStyle;
     private GUIStyle inspectArtistStyle;
@@ -101,6 +102,8 @@ public sealed class PlayerInteraction : MonoBehaviour
             ? aimedShelf.RowNumberForPoint(visibleFacePoint) : 0;
         aimedColumnNumber = aimedShelf != null
             ? aimedShelf.ColumnNumberForPoint(visibleFacePoint) : 0;
+        aimedFacingCount = aimedShelf != null
+            ? aimedShelf.CountAtFacing(visibleFacePoint) : 0;
         PhysicalInteractable selected = SelectedItem;
 
         // Stable focus while carrying: the card describes the SELECTED CD,
@@ -576,7 +579,8 @@ public sealed class PlayerInteraction : MonoBehaviour
     {
         string message = null;
         string facing = aimedRowNumber > 0
-            ? "ROW " + aimedRowNumber + " / 7   ·   " : string.Empty;
+            ? "ROW " + aimedRowNumber + " / 7   ·   "
+                + aimedFacingCount + "/4 CDS   ·   " : string.Empty;
 
         if (aimedItem != null)
         {
@@ -602,7 +606,9 @@ public sealed class PlayerInteraction : MonoBehaviour
         else if (aimedShelf != null)
         {
             message = facing + (SelectedItem != null
-                ? "E  SHELVE SELECTED CD"
+                ? aimedFacingCount >= ShelfSlot.MaxDepth
+                    ? "POSITION FULL"
+                    : "E  SHELVE SELECTED CD"
                 : "WHEEL  BROWSE CD STACK");
         }
 
