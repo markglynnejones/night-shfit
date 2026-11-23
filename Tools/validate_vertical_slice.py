@@ -7,6 +7,7 @@ or the feel of the game. Those still require a Unity runner/browser build.
 from __future__ import annotations
 
 import re
+import math
 from collections import Counter
 from pathlib import Path
 
@@ -18,6 +19,89 @@ SCENE = ROOT / "Game" / "Assets" / "Scenes" / "Prototype.unity"
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+def validate_cover_surface_geometry(shelf_source: str) -> None:
+    """Reproduce the authored CD cover-plane calculation without Unity.
+
+    Synthetic centre-camera sight lines test all seven rows, nine columns and
+    upper/centre/lower artwork regions at three standing distances. This is a
+    mathematical regression check, not an in-game mouse/collider test.
+    """
+    def number(name: str) -> float:
+        match = re.search(r"\b" + re.escape(name)
+                          + r"\s*=\s*(-?\d+(?:\.\d+)?)f;", shelf_source)
+        require(match is not None, f"Missing geometric constant {name}")
+        return float(match.group(1))
+
+    first_x = number("FirstCoverX")
+    x_pitch = number("CoverHorizontalSpacing")
+    first_y = number("FirstTierHeight")
+    y_pitch = number("TierHeightSpacing")
+    first_z = number("FirstTierZ")
+    z_pitch = number("TierDepthSpacing")
+    angle_match = re.search(
+        r"ShelvedEulerAngles\s*=\s*new\((\d+)f,\s*0f,\s*0f\)", shelf_source
+    )
+    require(angle_match is not None, "Unknown CD cover angle")
+    theta = math.radians(float(angle_match.group(1)))
+    sine, cosine = math.sin(theta), math.cos(theta)
+    normal = (0.0, sine, -cosine)
+    up = (0.0, cosine, sine)
+
+    centers = [
+        (first_x + column * x_pitch,
+         first_y + row * y_pitch,
+         first_z + row * z_pitch)
+        for row in range(7) for column in range(9)
+    ]
+
+    def dot(a, b):
+        return sum(x * y for x, y in zip(a, b))
+
+    def subtract(a, b):
+        return tuple(x - y for x, y in zip(a, b))
+
+    for viewer_z in (-0.9, -1.35, -1.8):
+        for face, target in enumerate(centers):
+            row = face // 9 + 1
+            column = face % 9 + 1
+            for cover_offset in (-0.025, 0.0, 0.025):
+                origin = (target[0], 1.65, viewer_z)
+                point = tuple(target[i] + up[i] * cover_offset
+                              for i in range(3))
+                direction_raw = subtract(point, origin)
+                length = math.sqrt(dot(direction_raw, direction_raw))
+                direction = tuple(value / length for value in direction_raw)
+                denominator = dot(direction, normal)
+                best_distance = math.inf
+                best_face = -1
+
+                for other, center in enumerate(centers):
+                    plane = tuple(center[i] + normal[i] * 0.008
+                                  for i in range(3))
+                    if denominator >= -0.05:
+                        continue
+
+                    distance = dot(subtract(plane, origin), normal) / denominator
+                    if not 0.12 < distance < min(best_distance, 3.5):
+                        continue
+
+                    world_hit = tuple(origin[i] + direction[i] * distance
+                                      for i in range(3))
+                    delta = subtract(world_hit, plane)
+                    local_x = delta[0]
+                    local_y = delta[1] * cosine + delta[2] * sine
+                    if abs(local_x) > 0.103 or abs(local_y) > 0.076:
+                        continue
+
+                    best_distance = distance
+                    best_face = other
+
+                require(best_face == face,
+                        f"CD cover aim missed row {row}, column {column} "
+                        f"at camera Z={viewer_z}, cover offset {cover_offset}; "
+                        f"selected face {best_face}")
+
 
 def main() -> None:
     setup = (SCRIPTS / "PrototypeSortingSetup.cs").read_text(encoding="utf-8")
@@ -321,8 +405,11 @@ def main() -> None:
             and "LocalOffsetForIndex(face)" in shelf,
             "Shelf aiming must resolve the visible CD facing")
     require("shelf.TryGetAimedFacePoint(" in player
-            and "Vector3.Cross(ray.direction, offset).sqrMagnitude" in player,
-            "Shelf interactions must target the visible facing under the centre ray")
+            and "if (distance >= bestDistance)" in player
+            and "Quaternion.Inverse(caseRotation)" in shelf
+            and "Vector3.Dot(sightLine.direction, coverNormal)" in shelf
+            and "Mathf.Abs(localOnCover.y) > halfCoverHeight" in shelf,
+            "Shelf interactions must intersect front-facing cover rectangles")
     require("firstSolidDistance" in player
             and "hit.collider.transform.IsChildOf(targetRoot)" in player
             and "QueryTriggerInteraction.Ignore" in player,
@@ -358,6 +445,13 @@ def main() -> None:
             and "savedShelfLayoutVersion >= 1" in save,
             "Old v2 saves must migrate while new v2 saves preserve per-column positions")
 
+    require("CheckSevenRowAimGeometry(shelf)" in validator
+            and "for (int row = 0; row < ShelfSlot.TierCount; row++)" in validator,
+            "Unity in-Editor validator must exercise every row, including 3 and 4")
+    require("RowNumberForPoint(" in shelf and "aimedFacingCount" in player,
+            "The crosshair must reveal target row and four-deep capacity")
+    validate_cover_surface_geometry(shelf)
+
     require("stock.Length != 1388" in validator and "shelf.Capacity != 252" in validator,
             "Unity Editor validator must check the expanded shop")
 
@@ -382,6 +476,7 @@ def main() -> None:
     print("PASS: Shared cover preview, Q inspect, rack front/copy count and small-CD aim assist.")
     print("PASS: Optical-centre CD pickup, physical rack-facing selection and targeted action prompts.")
     print("PASS: Stable four-deep per-facing removal/insertion/flip and v2 save-slot migration.")
+    print("PASS: CD cover-plane aiming across all 7 rows, 9 columns and 3 viewing distances.")
     print("Note: source/data checks only. Unity compilation and gameplay remain unverified.")
 
 if __name__ == "__main__":
