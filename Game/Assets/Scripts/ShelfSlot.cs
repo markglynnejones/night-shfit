@@ -526,6 +526,11 @@ public sealed class ShelfSlot : MonoBehaviour
         return FaceIndexForPoint(worldFacingPoint) % CoversPerTier + 1;
     }
 
+    public int CountAtFacing(Vector3 worldFacingPoint)
+    {
+        return CountInFace(FaceIndexForPoint(worldFacingPoint));
+    }
+
     // Let the interaction UI identify the front-facing CD and show how
     // many distinct physical copies are behind that cover. This read-only
     // query never alters the authored ordering or persistent state.
