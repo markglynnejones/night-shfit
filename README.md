@@ -75,3 +75,11 @@ Each rack still has seven rows and nine album-facing positions per row, with up 
 This replaces the old flattened arrangement where removing one case reshuffled everything after it. Each physical case now has a fixed rack slot number, stored alongside its existing shelf section and order in backward-compatible version-2 saves. Previously saved version-2 shops are interpreted using their original shelf order, preserving your existing CDs and progress. The in-Editor **Night Shift → Validate Running Vertical Slice** command also checks that no rack has duplicate physical positions or gaps behind a removed case.
 
 Shelf targeting is no longer dependent on the oversized invisible placement trigger. The camera-centre ray compares the actual CD facing positions in all eleven racks, making all seven rows available even if the old trigger doesn't intersect the crosshair. Walls and unrelated furniture remain solid obstructions. No physical case dimensions, carry capacity or scene geometry were changed.
+
+## Seven-row aiming reliability (row 3 / row 4 follow-up)
+
+Every rack's seven rows now use **angled CD-cover rectangle intersections** for targeting. The old nearest-centre test had a broad 16 cm tolerance that could select the row next to the one under the crosshair. The camera ray now checks the actual visible front-facing CD surfaces and chooses the closest intersection across rack sections. Picking up a CD from a rack uses this same target rather than independently choosing a neighbouring physics collider.
+
+To help verify the fix, the small crosshair panel now shows **ROW / COL / occupied CDs out of 4**. For example, `ROW 4 / 7 · COL 5 · 2/4 CDS` tells you exactly which position is targeted. A full `4/4` facing refuses another CD and displays `POSITION FULL`; an actual targeting miss shows no row target. **E** while carrying fewer than 10 and aiming at another CD still *collects* that CD; use **Shift+E** to shelve the selected carried CD into an occupied facing.
+
+The Unity Play-mode validator now also tests upper, centre and lower cover aiming across all seven rows, including troublesome rows 3 and 4. The source validation independently exercises all nine columns at several viewing distances. These are geometric checks; verify the actual pickup and placement feel in Unity.
